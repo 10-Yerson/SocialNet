@@ -49,36 +49,40 @@ exports.registerAdmin = async (req, res) => {
     }
 };
 
-// Login unificado para usuarios y administradores
+
+// Login de usuario y administrador
 exports.login = async (req, res) => {
     const { email, password } = req.body;
-    
     try {
-        // Buscar usuario en ambas colecciones
-        let user = await User.findOne({ email });
-        let admin = await Admin.findOne({ email });
+        // Primero, intenta encontrar el usuario como administrador
+        let user = await Admin.findOne({ email });
+        let isAdmin = true; // Flag para saber si el usuario es un administrador
 
-        const account = user || admin;
-        
-        if (!account) {
+        // Si no se encuentra como administrador, intenta encontrar como usuario
+        if (!user) {
+            user = await User.findOne({ email });
+            isAdmin = false; // El usuario no es un administrador
+        }
+
+        if (!user) {
             return res.status(400).json({ msg: 'Invalid credentials' });
         }
 
-        const isMatch = await bcrypt.compare(password, account.password);
+        const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(400).json({ msg: 'Invalid credentials' });
         }
 
         const payload = {
             user: {
-                id: account.id,
-                role: account.role
+                id: user.id,
+                role: isAdmin ? 'admin' : 'user'
             }
         };
 
         jwt.sign(payload, jwtSecret, { expiresIn: jwtExpire }, (err, token) => {
             if (err) throw err;
-            res.json({ token, role: account.role });
+            res.json({ token, role: isAdmin ? 'admin' : 'user' });
         });
     } catch (err) {
         res.status(500).json({ msg: 'Server error' });

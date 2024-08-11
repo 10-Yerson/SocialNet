@@ -1,58 +1,58 @@
 const Admin = require('../models/Admin');
 
-// Obtener todos los usuarios
+// Obtener todos los Administradores
 exports.getAdmin = async (req, res) => {
     try {
-        const users = await Admin.find();
-        res.json(users);
+        const admin = await Admin.find();
+        res.json(admin);
     } catch (err) {
         res.status(500).json({ msg: 'Server error' });
     }
 };
 
-// Obtener un usuario por ID
-exports.getUserById = async (req, res) => {
+// Obtener un Administrador por ID
+exports.getAdminById = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id);
-        if (!user) {
-            return res.status(404).json({ msg: 'User not found' });
+        const admin = await Admin.findById(req.params.id);
+        if (!admin) {
+            return res.status(404).json({ msg: 'Admin not found' });
         }
-        res.json(user);
+        res.json(admin);
     } catch (err) {
         res.status(500).json({ msg: 'Server error' });
     }
 };
 
-// Actualizar un usuario
-exports.updateUser = async (req, res) => {
+// Actualizar un Administrador
+exports.updateAdmin = async (req, res) => {
     const { name, email, role } = req.body;
     try {
-        const user = await User.findById(req.params.id);
-        if (!user) {
-            return res.status(404).json({ msg: 'User not found' });
+        const admin = await Admin.findById(req.params.id);
+        if (!admin) {
+            return res.status(404).json({ msg: 'Admin not found' });
         }
 
-        user.name = name || user.name;
-        user.email = email || user.email;
-        user.role = role || user.role;
+        admin.name = name || admin.name;
+        admin.email = email || admin.email;
+        admin.role = role || admin.role;
 
-        await user.save();
-        res.json({ msg: 'User updated successfully' });
+        await admin.save();
+        res.json({ msg: 'Admin updated successfully' });
     } catch (err) {
         res.status(500).json({ msg: 'Server error' });
     }
 };
 
-// Eliminar un usuario
-exports.deleteUser = async (req, res) => {
+// Eliminar un Administrador
+exports.deleteAdmin = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id);
-        if (!user) {
-            return res.status(404).json({ msg: 'User not found' });
+        const admin = await Admin.findById(req.params.id);
+        if (!admin) {
+            return res.status(404).json({ msg: 'Admin not found' });
         }
 
-        await user.remove();
-        res.json({ msg: 'User removed successfully' });
+        await admin.remove();
+        res.json({ msg: 'Admin removed successfully' });
     } catch (err) {
         res.status(500).json({ msg: 'Server error' });
     }
