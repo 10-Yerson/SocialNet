@@ -75,14 +75,14 @@ exports.login = async (req, res) => {
 
         const payload = {
             user: {
-                id: user.id,
+                id: user._id,
                 role: isAdmin ? 'admin' : 'user'
             }
         };
 
         jwt.sign(payload, jwtSecret, { expiresIn: jwtExpire }, (err, token) => {
             if (err) throw err;
-            res.json({ token, role: isAdmin ? 'admin' : 'user' });
+            res.json({ token, role: isAdmin ? 'admin' : 'user', userId: user._id });
         });
     } catch (err) {
         res.status(500).json({ msg: 'Server error' });
