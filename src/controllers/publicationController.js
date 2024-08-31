@@ -28,3 +28,18 @@ exports.getAllPublications = async (req, res) => {
         res.status(500).json({ message: 'Error fetching publications', error: error.message });
     }
 };
+
+
+// Obtener publicaciones del usuario autenticado
+exports.getUserPublications = async (req, res) => {
+    try {
+        const userId = req.user.id;  // Asegúrate de que req.user contiene el ID del usuario autenticado
+        const publications = await Publication.find({ user: userId })
+            .populate('user', 'name profilePicture')  // Si el usuario tiene un nombre y una imagen de perfil
+            .sort({ createdAt: -1 });
+        res.json(publications);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching publications', error: error.message });
+    }
+};
+

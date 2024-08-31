@@ -10,4 +10,7 @@ router.post('/create', auth, authorize('user', 'admin'), publicationController.c
 // Obtener todas las publicaciones (disponible solo para usuarios con rol 'user' o 'admin')
 router.get('/', auth, authorize('user', 'admin'), publicationController.getAllPublications);
 
+// Obtener las publicaciones del usuario autenticado
+router.get('/user', auth, authorize('user', 'admin'), publicationController.getUserPublications);
+
 module.exports = router;
