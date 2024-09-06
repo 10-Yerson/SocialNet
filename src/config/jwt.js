@@ -1,4 +1,4 @@
 module.exports = {
     jwtSecret: 'your_jwt_secret',
-    jwtExpire: '1h'
+    jwtExpire: '2h'
 };

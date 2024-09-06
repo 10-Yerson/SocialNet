@@ -7,7 +7,7 @@ const { jwtSecret, jwtExpire } = require('../config/jwt');
 
 // Registro de usuario
 exports.registerUser = async (req, res) => {
-    const { name, email, password } = req.body;
+    const { name, apellido, fechaNacimiento, genero, email, password } = req.body;
     try {
         let user = await User.findOne({ email });
         if (user) {
@@ -16,6 +16,9 @@ exports.registerUser = async (req, res) => {
 
         user = new User({
             name,
+            apellido,
+            fechaNacimiento,
+            genero,
             email,
             password
         });
@@ -23,7 +26,8 @@ exports.registerUser = async (req, res) => {
         await user.save();
         res.status(201).json({ msg: 'User registered successfully' });
     } catch (err) {
-        res.status(500).json({ msg: 'Server error' });
+        console.error(err);  // Muestra el error en la consola
+        res.status(500).json({ msg: 'Server error', error: err.message });
     }
 };
 
@@ -87,4 +91,4 @@ exports.login = async (req, res) => {
     } catch (err) {
         res.status(500).json({ msg: 'Server error' });
     }
-};
+}
