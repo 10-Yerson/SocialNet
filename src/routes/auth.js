@@ -4,7 +4,7 @@ const { registerUser, registerAdmin, login} = require('../controllers/authContro
 
 
 // Rutas de registro
-router.post('/register/user', registerUser);
+router.post('/register', registerUser);
 router.post('/register/admin', registerAdmin);
 
 // Ruta de login unificada para usuarios y administradores

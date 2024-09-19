@@ -1,16 +1,19 @@
 const express = require('express');
-const authRoutes = require('./auth');
-const userRoutes = require('./user');
-const adminRoutes = require('./admin');
-const publicationRoutes = require('./publication')
-const fotoRoutes = require('./uploadRoutes')
+const fs = require('fs');
+const path = require('path');
 
 const router = express.Router();
 
-// Agrupa y organiza las rutas
-router.use('/api/auth', authRoutes);
-router.use('/api/user', userRoutes);
-router.use('/api/admin', adminRoutes);
-router.use('/api/publication', publicationRoutes);
-router.use('/api/', fotoRoutes );
+// Directorio donde están los archivos de rutas
+const routesPath = path.join(__dirname);
+
+// Carga dinámica de las rutas
+fs.readdirSync(routesPath).forEach((file) => {
+  if (file !== 'index.js') {
+    const route = require(path.join(routesPath, file)); // Importa el archivo de ruta
+    const routeName = file.split('.')[0]; // Usa el nombre del archivo como la ruta
+    router.use(`/api/${routeName}`, route); // Asocia el nombre del archivo a la ruta
+  }
+});
+
 module.exports = router;
