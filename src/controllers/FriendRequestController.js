@@ -12,11 +12,21 @@ exports.verUsuariosNoAmigos = async (req, res) => {
             return res.status(404).json({ msg: 'Usuario no encontrado' });
         }
 
+        // Encuentra las solicitudes de amistad enviadas por este usuario
+        const solicitudesEnviadas = await FriendRequest.find({
+            sender: userId,
+            status: 'pending'  // Solo las solicitudes pendientes
+        }).select('receiver');
+
+        // Extrae los IDs de los usuarios que han recibido solicitudes
+        const solicitudesEnviadasIds = solicitudesEnviadas.map(solicitud => solicitud.receiver);
+
         const amigos = user.friends;
         const solicitudes = user.friendRequests;
 
+        // Encuentra los usuarios que no son amigos ni tienen solicitudes pendientes
         const usuarios = await User.find({
-            _id: { $ne: userId, $nin: [...amigos, ...solicitudes] }
+            _id: { $ne: userId, $nin: [...amigos, ...solicitudes, ...solicitudesEnviadasIds] }
         });
 
         res.json(usuarios);
@@ -25,6 +35,7 @@ exports.verUsuariosNoAmigos = async (req, res) => {
         res.status(500).json({ msg: 'Error del servidor' });
     }
 };
+
 
 // Enviar una solicitud de amistad
 exports.enviarSolicitudAmistad = async (req, res) => {
@@ -60,7 +71,7 @@ exports.verSolicitudesAmistad = async (req, res) => {
         }).populate('sender', 'name apellido profilePicture');
 
         if (!solicitudes.length) {
-            return res.status(404).json({ msg: 'No tienes solicitudes de amistad' });
+            return res.status(200).json({ msg: 'No tienes solicitudes de amistad' });
         }
 
         res.json(solicitudes);
@@ -71,11 +82,12 @@ exports.verSolicitudesAmistad = async (req, res) => {
 
 // Controlador para aceptar o rechazar una solicitud de amistad
 exports.gestionarSolicitudAmistad = async (req, res) => {
-    const { solicitudId, accion } = req.body; // 'accion' puede ser 'aceptar' o 'rechazar'
+    const solicitudId = req.params.id; // Ahora se obtiene de req.params.id
+    const { accion } = req.body; // 'accion' puede ser 'aceptar' o 'rechazar'
     const userId = req.user.id; // ID del usuario autenticado
 
-    if (!solicitudId || !accion) {
-        return res.status(400).json({ msg: 'ID de la solicitud y la acción son requeridos' });
+    if (!accion) {
+        return res.status(400).json({ msg: 'La acción es requerida' });
     }
 
     try {
