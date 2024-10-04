@@ -65,9 +65,9 @@ exports.verSolicitudesAmistad = async (req, res) => {
     try {
         const userId = req.user.id;
 
-        const solicitudes = await FriendRequest.find({ 
-            receiver: userId, 
-            status: 'pending' 
+        const solicitudes = await FriendRequest.find({
+            receiver: userId,
+            status: 'pending'
         }).populate('sender', 'name apellido profilePicture');
 
         if (!solicitudes.length) {
@@ -82,9 +82,9 @@ exports.verSolicitudesAmistad = async (req, res) => {
 
 // Controlador para aceptar o rechazar una solicitud de amistad
 exports.gestionarSolicitudAmistad = async (req, res) => {
-    const solicitudId = req.params.id; // Ahora se obtiene de req.params.id
+    const solicitudId = req.params.id; // ID de la solicitud de amistad
     const { accion } = req.body; // 'accion' puede ser 'aceptar' o 'rechazar'
-    const userId = req.user.id; // ID del usuario autenticado
+    const userId = req.user.id; // ID del usuario autenticado (el receptor de la solicitud)
 
     if (!accion) {
         return res.status(400).json({ msg: 'La acción es requerida' });
@@ -98,16 +98,18 @@ exports.gestionarSolicitudAmistad = async (req, res) => {
             return res.status(404).json({ msg: 'Solicitud no encontrada' });
         }
 
+        // Verificar que el usuario autenticado sea el receptor de la solicitud
         if (solicitud.receiver.toString() !== userId) {
             return res.status(403).json({ msg: 'No tienes permiso para gestionar esta solicitud' });
         }
 
+        // Manejo de la acción de aceptar o rechazar la solicitud
         if (accion === 'aceptar') {
-            // Aceptar la solicitud
+            // Cambia el estado de la solicitud a aceptada
             solicitud.status = 'accepted';
             await solicitud.save();
 
-            // Encuentra a los usuarios involucrados
+            // Encuentra a los usuarios involucrados (emisor y receptor)
             const sender = await User.findById(solicitud.sender._id);
             const receiver = await User.findById(userId);
 
@@ -115,27 +117,28 @@ exports.gestionarSolicitudAmistad = async (req, res) => {
                 return res.status(404).json({ msg: 'Usuario no encontrado' });
             }
 
-            // Agrega los usuarios a la lista de amigos
+            // Añadir el emisor a la lista de amigos del receptor si no están ya en la lista
             if (!receiver.friends.includes(sender._id)) {
                 receiver.friends.push(sender._id);
                 await receiver.save();
             }
 
+            // Añadir el receptor a la lista de amigos del emisor si no están ya en la lista
             if (!sender.friends.includes(receiver._id)) {
                 sender.friends.push(receiver._id);
                 await sender.save();
             }
 
-            // Elimina la solicitud de amistad de la base de datos
+            // Eliminar la solicitud de amistad después de aceptar
             await FriendRequest.findByIdAndDelete(solicitudId);
 
-            return res.json({ msg: 'Solicitud de amistad aceptada exitosamente' });
+            return res.json({ msg: 'Solicitud de amistad aceptada exitosamente, ahora son amigos' });
         } else if (accion === 'rechazar') {
-            // Rechazar la solicitud
+            // Cambia el estado de la solicitud a rechazada
             solicitud.status = 'rejected';
             await solicitud.save();
 
-            // Elimina la solicitud de amistad si lo prefieres
+            // Eliminar la solicitud de amistad después de rechazarla
             await FriendRequest.findByIdAndDelete(solicitudId);
 
             return res.json({ msg: 'Solicitud de amistad rechazada' });
@@ -147,6 +150,7 @@ exports.gestionarSolicitudAmistad = async (req, res) => {
         res.status(500).json({ msg: 'Error del servidor' });
     }
 };
+
 
 
 // Controller para ver amigos
@@ -176,3 +180,66 @@ exports.verAmigos = async (req, res) => {
     }
 };
 
+// Función para verificar el estado de la solicitud de amistad o si ya son amigos
+exports.checkFriendRequestStatus = async (req, res) => {
+    const { id } = req.params; // ID del usuario con el que queremos verificar la amistad
+    const currentUserId = req.user.id; // ID del usuario actual autenticado
+
+    try {
+        // Verificar si existe una solicitud de amistad entre los dos usuarios
+        const friendRequest = await FriendRequest.findOne({
+            $or: [
+                { sender: currentUserId, receiver: id },
+                { sender: id, receiver: currentUserId }
+            ]
+        });
+
+        // Si no hay ninguna solicitud, no son amigos ni hay solicitud enviada
+        if (!friendRequest) {
+            return res.status(200).json({
+                isFriend: false,
+                requestSent: false,
+                requestReceived: false
+            });
+        }
+
+        // Verificar si ya son amigos (solicitud aceptada)
+        if (friendRequest.status === 'accepted') {
+            return res.status(200).json({
+                isFriend: true,
+                requestSent: false,
+                requestReceived: false
+            });
+        }
+
+        // Si hay una solicitud pendiente
+        if (friendRequest.status === 'pending') {
+            if (friendRequest.sender.toString() === currentUserId) {
+                // Si el usuario actual envió la solicitud
+                return res.status(200).json({
+                    isFriend: false,
+                    requestSent: true,
+                    requestReceived: false
+                });
+            } else {
+                // Si el usuario actual recibió la solicitud
+                return res.status(200).json({
+                    isFriend: false,
+                    requestSent: false,
+                    requestReceived: true
+                });
+            }
+        }
+
+        // Si la solicitud fue rechazada
+        if (friendRequest.status === 'rejected') {
+            return res.status(200).json({
+                isFriend: false,
+                requestSent: false,
+                requestReceived: false
+            });
+        }
+    } catch (error) {
+        return res.status(500).json({ message: 'Error al verificar el estado de la solicitud' });
+    }
+};

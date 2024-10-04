@@ -8,5 +8,6 @@ router.post('/solicitud/:id', auth, authorize('user'), FriendsController.enviarS
 router.get('/solicitudes', auth, authorize('user'), FriendsController.verSolicitudesAmistad);
 router.post('/gestionar/:id', auth, authorize('user'), FriendsController.gestionarSolicitudAmistad);
 router.get('/amigos', auth, authorize('user'), FriendsController.verAmigos);
+router.get('/status/:id', auth, authorize('user'), FriendsController.checkFriendRequestStatus);
 
 module.exports = router;
