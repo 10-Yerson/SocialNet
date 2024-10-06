@@ -33,14 +33,14 @@ const UserSchema = new mongoose.Schema({
         type: String,
         default: 'https://res.cloudinary.com/dbgj8dqup/image/upload/v1725640005/uploads/ktsngfmjvjv094hygwsu.png' // URL de imagen por defecto
     },
-    friends: [{ 
+    followers: [{ 
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'User' 
-    }], // Añadido para almacenar amigos
-    friendRequests: [{ 
+    }], // Almacena los usuarios que siguen a este usuario
+    following: [{ 
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'User' 
-    }], // Para gestionar solicitudes de amistad
+    }], // Almacena los usuarios a los que este usuario sigue
     role: {
         type: String,
         enum: ['user'],
