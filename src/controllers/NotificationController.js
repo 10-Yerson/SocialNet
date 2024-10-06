@@ -3,7 +3,6 @@ const User = require('../models/User');
 
 // Enviar una notificación a un usuario
 exports.sendNotification = async (recipientId, senderId, message) => {
-    console.log('Enviando notificación a:', recipientId, 'de parte de:', senderId);
     try {
         const recipient = await User.findById(recipientId);
 
