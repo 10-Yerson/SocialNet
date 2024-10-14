@@ -6,7 +6,7 @@ let io;
 const initializeSocket = (server) => {
     io = socketIo(server, {
         cors: {
-            origin: 'http://localhost:3000', // Cambia esto a la URL de tu frontend
+            origin: process.env.NEXT_PUBLIC_BASE_URL, // Cambia esto a la URL de tu frontend
             methods: ['GET', 'POST']
         }
     });
