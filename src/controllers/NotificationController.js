@@ -1,5 +1,6 @@
 const Notification = require('../models/Notification');
 const User = require('../models/User');
+const { getIoInstance } = require('../config/socketConfig');
 
 // Enviar una notificación a un usuario
 exports.sendNotification = async (recipientId, senderId, message) => {
@@ -18,7 +19,16 @@ exports.sendNotification = async (recipientId, senderId, message) => {
         });
 
         await notification.save();
-        console.log('Notificación enviada');
+
+        // Obtener la instancia de io y enviar la notificación en tiempo real
+        const io = getIoInstance();
+        io.to(recipientId).emit('newNotification', {
+            recipient: recipientId,
+            sender: senderId,
+            message,
+        });
+
+        console.log('Notificación enviada y emitida en tiempo real');
     } catch (err) {
         console.error('Error al enviar notificación:', err.message);
     }
