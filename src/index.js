@@ -3,17 +3,9 @@ const connectDB = require('./config/db');
 const routes = require('./routes')
 const cors = require('cors');
 require('dotenv').config();
-const http = require('http');
-const { initializeSocket } = require('./config/socketConfig');
 
 const app = express();
 const port = process.env.PORT || 5000;
-
-// Crear el servidor HTTP con Express
-const server = http.createServer(app);
-// Inicializar Socket.io
-initializeSocket(server);
-
 
 // Middleware para parsear JSON
 app.use(express.json());
