@@ -1,57 +1,8 @@
-const User = require('../models/User')
+const User = require('../models/User');
 const Admin = require('../models/Admin');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { jwtSecret, jwtExpire } = require('../config/jwt');
-
-
-// // Registro de usuario
-// exports.registerUser = async (req, res) => {
-//     const { name, apellido, fechaNacimiento, genero, email, password } = req.body;
-//     try {
-//         let user = await User.findOne({ email });
-//         if (user) {
-//             return res.status(400).json({ msg: 'User already exists' });
-//         }
-
-//         user = new User({
-//             name,
-//             apellido,
-//             fechaNacimiento,
-//             genero,
-//             email,
-//             password
-//         });
-
-//         await user.save();
-//         res.status(201).json({ msg: 'User registered successfully' });
-//     } catch (err) {
-//         console.error(err);  // Muestra el error en la consola
-//         res.status(500).json({ msg: 'Server error', error: err.message });
-//     }
-// };
-
-// // Registro de administrador
-// exports.registerAdmin = async (req, res) => {
-//     const { name, email, password } = req.body;
-//     try {
-//         let admin = await Admin.findOne({ email });
-//         if (admin) {
-//             return res.status(400).json({ msg: 'Admin already exists' });
-//         }
-
-//         admin = new Admin({
-//             name,
-//             email,
-//             password
-//         });
-
-//         await admin.save();
-//         res.status(201).json({ msg: 'Admin registered successfully' });
-//     } catch (err) {
-//         res.status(500).json({ msg: 'Server error' });
-//     }
-// };
 
 exports.registerUser = async (req, res) => {
     const { name, apellido, fechaNacimiento, genero, email, password } = req.body;
@@ -63,17 +14,14 @@ exports.registerUser = async (req, res) => {
             return res.status(400).json({ msg: 'User already exists' });
         }
 
-        // Hasheo de contraseña en paralelo
-        const hashedPasswordPromise = bcrypt.hash(password, 8);
-
-        // Crear el nuevo usuario mientras se hace el hasheo
+        // Crear el nuevo usuario sin hacer el hash de la contraseña
         const newUser = new User({
             name,
             apellido,
             fechaNacimiento,
             genero,
             email,
-            password: await hashedPasswordPromise
+            password // Guardamos la contraseña sin hash, el modelo se encarga de eso
         });
 
         await newUser.save();
@@ -94,14 +42,11 @@ exports.registerAdmin = async (req, res) => {
             return res.status(400).json({ msg: 'Admin already exists' });
         }
 
-        // Hasheo de contraseña en paralelo
-        const hashedPasswordPromise = bcrypt.hash(password, 8);
-
-        // Crear el nuevo administrador mientras se hace el hasheo
+        // Crear el nuevo administrador sin hacer el hash de la contraseña
         const newAdmin = new Admin({
             name,
             email,
-            password: await hashedPasswordPromise
+            password // Guardamos la contraseña sin hash, el modelo se encarga de eso
         });
 
         await newAdmin.save();
@@ -112,31 +57,35 @@ exports.registerAdmin = async (req, res) => {
     }
 };
 
-// Login de usuario y administrador
 exports.login = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        // Ejecutar las consultas en paralelo
+        console.log(`Intento de login con el correo: ${email}`);
+        
         const [admin, user] = await Promise.all([
             Admin.findOne({ email }).select('password _id').lean(),
             User.findOne({ email }).select('password _id').lean()
         ]);
 
-        let account = admin || user; // Determina si es admin o user
-        const isAdmin = Boolean(admin); // Si encontró admin, es true; de lo contrario, false
+        const account = admin || user;
+        const isAdmin = Boolean(admin);
 
         if (!account) {
+            console.log('Cuenta no encontrada');
             return res.status(400).json({ msg: 'Credenciales inválidas' });
         }
 
-        // Comparar la contraseña
+        console.log('Cuenta encontrada:', account);
+
         const isMatch = await bcrypt.compare(password, account.password);
+        console.log('Resultado de la comparación de contraseña:', isMatch);
+
         if (!isMatch) {
+            console.log('Contraseña incorrecta');
             return res.status(400).json({ msg: 'Credenciales inválidas' });
         }
 
-        // Crear el payload con el rol del usuario
         const payload = {
             user: {
                 id: account._id,
@@ -144,52 +93,16 @@ exports.login = async (req, res) => {
             }
         };
 
-        // Generar el token
         jwt.sign(payload, jwtSecret, { expiresIn: jwtExpire }, (err, token) => {
-            if (err) throw err;
+            if (err) {
+                console.error('Error al firmar el token:', err);
+                throw err;
+            }
+            console.log(`Token generado para ${isAdmin ? 'admin' : 'user'} con ID: ${account._id}`);
             res.json({ token, role: isAdmin ? 'admin' : 'user', userId: account._id });
         });
     } catch (err) {
-        console.error(err.message);
+        console.error('Error en el login:', err.message);
         res.status(500).json({ msg: 'Error del servidor' });
     }
 };
-
-
-// exports.login = async (req, res) => {
-//     const { email, password } = req.body;
-//     try {
-//         // Primero, intenta encontrar el usuario como administrador
-//         let user = await Admin.findOne({ email });
-//         let isAdmin = true; // Flag para saber si el usuario es un administrador
-
-//         // Si no se encuentra como administrador, intenta encontrar como usuario
-//         if (!user) {
-//             user = await User.findOne({ email });
-//             isAdmin = false; // El usuario no es un administrador
-//         }
-
-//         if (!user) {
-//             return res.status(400).json({ msg: 'Invalid credentials' });
-//         }
-
-//         const isMatch = await bcrypt.compare(password, user.password);
-//         if (!isMatch) {
-//             return res.status(400).json({ msg: 'Invalid credentials' });
-//         }
-
-//         const payload = {
-//             user: {
-//                 id: user._id,
-//                 role: isAdmin ? 'admin' : 'user'
-//             }
-//         };
-
-//         jwt.sign(payload, jwtSecret, { expiresIn: jwtExpire }, (err, token) => {
-//             if (err) throw err;
-//             res.json({ token, role: isAdmin ? 'admin' : 'user', userId: user._id });
-//         });
-//     } catch (err) {
-//         res.status(500).json({ msg: 'Server error' });
-//     }
-// }

@@ -1,7 +1,8 @@
 const express = require('express');
 const connectDB = require('./config/db');
-const routes = require('./routes')
+const routes = require('./routes');
 const cors = require('cors');
+const compression = require('./middleware/compression');
 require('dotenv').config();
 
 const app = express();
@@ -13,11 +14,15 @@ app.use(express.json());
 // Middleware para CORS
 app.use(cors());
 
+// Middleware para compresión
+app.use(compression); // Aplica el middleware de compresión después de cors y json
+
 // Conexión a MongoDB
 connectDB();
 
-app.use(routes)
+// Configuración de rutas
+app.use(routes);
 
 app.listen(port, () => {
-    console.log(`Server running at https://localhost:${port}`);
+    console.log(`Server running at http://localhost:${port}`);
 });

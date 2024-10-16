@@ -9,7 +9,6 @@ const UserSchema = new mongoose.Schema({
     apellido: {
         type: String,
         required: true
-    
     },
     fechaNacimiento: {
         type: Date,
@@ -36,11 +35,11 @@ const UserSchema = new mongoose.Schema({
     followers: [{ 
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'User' 
-    }], // Almacena los usuarios que siguen a este usuario
+    }],
     following: [{ 
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'User' 
-    }], // Almacena los usuarios a los que este usuario sigue
+    }],
     role: {
         type: String,
         enum: ['user'],
