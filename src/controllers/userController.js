@@ -83,7 +83,7 @@ exports.deleteUser = async (req, res) => {
 const uploadToCloudinary = (file) => {
     return new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
-            { folder: 'uploads', allowed_formats: ['jpg', 'png'] },
+            { folder: 'Profiles', allowed_formats: ['jpg', 'png'] },
             (error, result) => {
                 if (error) {
                     reject(error);

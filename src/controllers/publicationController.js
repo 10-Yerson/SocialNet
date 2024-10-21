@@ -42,14 +42,24 @@ exports.createPublication = async (req, res) => {
 // Obtener todas las publicaciones
 exports.getAllPublications = async (req, res) => {
     try {
+        const userId = req.user.id;  // ID del usuario autenticado
+
         const publications = await Publication.find()
             .populate('user', 'name profilePicture')
             .sort({ createdAt: -1 });
-        res.json(publications);
+
+        // Añadir un campo 'likedByUser' para cada publicación
+        const publicationsWithLikes = publications.map(pub => ({
+            ...pub._doc,  // Usamos '_doc' para acceder al objeto de mongoose
+            likedByUser: pub.likes.includes(userId)  // Comprobar si el usuario actual le ha dado "me gusta"
+        }));
+
+        res.json(publicationsWithLikes);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching publications', error: error.message });
     }
 };
+
 
 // Obtener publicaciones del usuario autenticado
 exports.getUserPublications = async (req, res) => {
@@ -115,8 +125,6 @@ exports.getUserPublicationsById = async (req, res) => {
     }
 };
 
-
-
 // Actualizar una publicación
 exports.updatePublication = async (req, res) => {
     try {
@@ -155,4 +163,70 @@ exports.deletePublication = async (req, res) => {
 };
 
 
+// Controlador para dar like a una publicación
+exports.likePublication = async (req, res) => {
+    try {
+        const publication = await Publication.findById(req.params.id);
+
+        // Si no se encuentra la publicación, envía un error
+        if (!publication) {
+            return res.status(404).json({ msg: 'Publicación no encontrada' });
+        }
+
+        // Verificar si el usuario ya ha dado like
+        if (publication.likes.includes(req.user.id)) {
+            return res.status(400).json({ msg: 'Ya le has dado like a esta publicación' });
+        }
+
+        // Agregar el like
+        publication.likes.push(req.user.id);
+        await publication.save();
+
+        res.json(publication.likes);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Error en el servidor');
+    }
+};
+
+
+// Controlador para unlikePublication
+exports.unlikePublication = async (req, res) => {
+    try {
+        const publication = await Publication.findById(req.params.id);
+        if (!publication) {
+            return res.status(404).json({ msg: 'Publicación no encontrada' });
+        }
+
+        // Verifica si el usuario ha dado like previamente
+        if (!publication.likes.includes(req.body.userId)) {
+            return res.status(400).json({ msg: 'No has dado like a esta publicación' });
+        }
+
+        // Elimina el like del usuario
+        publication.likes = publication.likes.filter(
+            (like) => like.toString() !== req.body.userId
+        );
+
+        await publication.save();
+        res.status(200).json({ msg: 'Like eliminado' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ msg: 'Error del servidor' });
+    }
+};
+
+// Obtener los usuarios que dieron "me gusta" a una publicación
+
+exports.getPublicationLikes = async (req, res) => {
+    try {
+        const publicationId = req.params.id;
+
+        const publication = await Publication.findById(publicationId).populate('likes', 'name profilePicture');
+
+        res.json({ message: 'Usuarios que dieron "me gusta"', likes: publication.likes });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al obtener los "me gusta"', error: error.message });
+    }
+};
 

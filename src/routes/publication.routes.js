@@ -25,4 +25,9 @@ router.put('/update/:id', auth, authorize('user', 'admin'), publicationControlle
 // Eliminar una publicación
 router.delete('/delete/:id', auth, authorize('user', 'admin'), publicationController.deletePublication);
 
+router.post('/:id/like', auth, authorize('user', 'admin'), publicationController.likePublication);  // Dar "me gusta" a una publicación
+router.post('/:id/unlike', auth, authorize('user', 'admin'), publicationController.unlikePublication);  // Eliminar "me gusta" de una publicación
+router.get('/:id/likes',auth, authorize('user', 'admin'), publicationController.getPublicationLikes);  // Obtener los usuarios que dieron "me gusta"
+
+
 module.exports = router;
