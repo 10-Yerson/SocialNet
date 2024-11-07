@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const cloudinary = require('../config/cloudinary');
 const { Readable } = require('stream');
+const bcrypt = require('bcryptjs');
 
 // Obtener todos los usuarios
 exports.getUsers = async (req, res) => {
@@ -33,7 +34,7 @@ exports.getUserById = async (req, res) => {
 
 // Actualizar un usuario
 exports.updateUser = async (req, res) => {
-    const { name, email, role, apellido, fechaNacimiento, genero } = req.body;
+    const { name, email, apellido, fechaNacimiento, genero, descripcion, hobbies, socialLinks, ciudad, password } = req.body;
     try {
         const user = await User.findById(req.params.id);
         if (!user) {
@@ -42,19 +43,31 @@ exports.updateUser = async (req, res) => {
 
         // Actualizar solo los campos que se reciban en la solicitud
         user.name = name || user.name;
-        user.email = email || user.email;
         user.apellido = apellido || user.apellido;
+        user.email = email || user.email;
         user.fechaNacimiento = fechaNacimiento || user.fechaNacimiento;
         user.genero = genero || user.genero;
-
-        // Solo se actualiza el role si es válido y pertenece a los valores permitidos
-        if (role && ['user'].includes(role)) {
-            user.role = role;
+    
+        // Actualizar los campos opcionales del perfil
+        if (descripcion) user.profile.descripcion = descripcion;
+        if (hobbies && Array.isArray(hobbies)) user.profile.hobbies = hobbies; // Verifica que sea un array
+        if (socialLinks) {
+            if (socialLinks.tiktok) user.profile.socialLinks.tiktok = socialLinks.tiktok;
+            if (socialLinks.facebook) user.profile.socialLinks.facebook = socialLinks.facebook;
+            if (socialLinks.instagram) user.profile.socialLinks.instagram = socialLinks.instagram;
         }
+        if (ciudad) user.profile.ciudad = ciudad;
 
+        // En caso de que se actualice la contraseña, encriptarla antes de guardar
+        if (password) {
+            const salt = await bcrypt.genSalt(8);
+            user.password = await bcrypt.hash(password, salt);
+        }
+        // Guardar los cambios en la base de datos
         await user.save();
         res.json({ msg: 'User updated successfully', user });
     } catch (err) {
+        console.error("Error updating user:", err);
         res.status(500).json({ msg: 'Server error' });
     }
 };

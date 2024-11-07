@@ -18,10 +18,13 @@ exports.registerUser = async (req, res) => {
         const newUser = new User({
             name,
             apellido,
-            fechaNacimiento,
             genero,
             email,
-            password // Guardamos la contraseña sin hash, el modelo se encarga de eso
+            password, // Guardamos la contraseña sin hash, el modelo se encarga de eso
+            profile: {
+                fechaNacimiento,
+                genero
+            }
         });
 
         await newUser.save();

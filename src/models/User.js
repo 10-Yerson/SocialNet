@@ -10,15 +10,6 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    fechaNacimiento: {
-        type: Date,
-        required: true
-    },
-    genero: {
-        type: String,
-        enum: ['Masculino', 'Femenino', 'Otro'],
-        required: true
-    },
     email: {
         type: String,
         required: true,
@@ -40,6 +31,45 @@ const UserSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'User' 
     }],
+    
+    profile: {
+        fechaNacimiento: {
+            type: Date,
+            required: true
+        },
+        genero: {
+            type: String,
+            enum: ['Masculino', 'Femenino', 'Otro'],
+            required: true
+        },
+        descripcion: {
+            type: String,
+            maxlength: 500,
+            required: false
+        },
+        hobbies: [{
+            type: String,
+            required: false
+        }],
+        socialLinks: {
+            tiktok: {
+                type: String,
+                match: [/^(https?:\/\/)?(www\.)?(tiktok\.com\/@[\w\-]+\/?)$/, 'Por favor, ingresa un enlace válido de TikTok'] ,  required: false
+            },
+            facebook: {
+                type: String,
+                match: [/^(https?:\/\/)?(www\.)?facebook\.com\/.+$/, 'Por favor, ingresa un enlace válido de Facebook'] ,  required: false
+            },
+            instagram: {
+                type: String,
+                match: [/^(https?:\/\/)?(www\.)?instagram\.com\/.+$/, 'Por favor, ingresa un enlace válido de Instagram'] ,  required: false
+            }
+        },
+        ciudad: {
+            type: String,
+            required: false
+        }
+    },
     role: {
         type: String,
         enum: ['user'],
