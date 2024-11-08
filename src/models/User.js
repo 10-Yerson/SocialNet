@@ -45,29 +45,26 @@ const UserSchema = new mongoose.Schema({
         descripcion: {
             type: String,
             maxlength: 500,
-            required: false
         },
         hobbies: [{
             type: String,
-            required: false
         }],
         socialLinks: {
             tiktok: {
                 type: String,
-                match: [/^(https?:\/\/)?(www\.)?(tiktok\.com\/@[\w\-]+\/?)$/, 'Por favor, ingresa un enlace válido de TikTok'] ,  required: false
+                match: [/^(https?:\/\/)?(www\.)?(tiktok\.com\/@[\w\-]+\/?)$/, 'Por favor, ingresa un enlace válido de TikTok'] ,
             },
             facebook: {
                 type: String,
-                match: [/^(https?:\/\/)?(www\.)?facebook\.com\/.+$/, 'Por favor, ingresa un enlace válido de Facebook'] ,  required: false
+                match: [/^(https?:\/\/)?(www\.)?facebook\.com\/.+$/, 'Por favor, ingresa un enlace válido de Facebook'] ,
             },
             instagram: {
                 type: String,
-                match: [/^(https?:\/\/)?(www\.)?instagram\.com\/.+$/, 'Por favor, ingresa un enlace válido de Instagram'] ,  required: false
+                match: [/^(https?:\/\/)?(www\.)?instagram\.com\/.+$/, 'Por favor, ingresa un enlace válido de Instagram'] ,
             }
         },
         ciudad: {
             type: String,
-            required: false
         }
     },
     role: {
