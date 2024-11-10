@@ -8,7 +8,7 @@ const fileFilter = (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
         cb(null, true);  // Acepta la imagen
     } else {
-        cb(new Error('Invalid file type, only images are allowed!'), false);  // Rechaza el archivo si no es una imagen
+        cb(new Error('Tipo de archivo inválido: solo se permiten imágenes.'), false);  // Rechaza el archivo si no es una imagen
     }
 };
 

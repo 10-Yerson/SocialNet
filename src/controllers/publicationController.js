@@ -14,7 +14,12 @@ exports.createPublication = async (req, res) => {
             // Subir la imagen a Cloudinary usando streams
             const uploadStream = async (buffer) => {
                 return new Promise((resolve, reject) => {
-                    const upload = cloudinary.uploader.upload_stream((error, result) => {
+                    const upload = cloudinary.uploader.upload_stream(
+                        {
+                            folder: 'Publications',  // Especifica la carpeta en Cloudinary
+                            allowed_formats: ['jpg', 'jpeg', 'png']  // Formatos permitidos
+                        },
+                        (error, result) => {
                         if (error) reject(error);
                         resolve(result);
                     });

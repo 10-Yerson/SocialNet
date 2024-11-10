@@ -96,7 +96,7 @@ exports.deleteUser = async (req, res) => {
 const uploadToCloudinary = (file) => {
     return new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
-            { folder: 'Profiles', allowed_formats: ['jpg', 'png'] },
+            { folder: 'Profiles', allowed_formats: ['jpg', 'jpeg', 'png'] },
             (error, result) => {
                 if (error) {
                     reject(error);
@@ -133,7 +133,7 @@ exports.uploadProfilePicture = async (req, res) => {
         await user.save();
 
         res.json({
-            msg: 'Profile picture updated successfully',
+            msg: 'Imagen de perfil actualizada con éxito',
             profilePicture: result.secure_url
         });
     } catch (error) {
