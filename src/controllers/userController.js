@@ -34,7 +34,7 @@ exports.getUserById = async (req, res) => {
 
 // Actualizar un usuario
 exports.updateUser = async (req, res) => {
-    const { name, email, apellido, fechaNacimiento, genero, descripcion, hobbies, socialLinks, ciudad, password } = req.body;
+    const { name, email, apellido, fechaNacimiento, genero, estadoCivil, descripcion, hobbies, socialLinks, origen, password } = req.body;
     try {
         const user = await User.findById(req.params.id);
         if (!user) {
@@ -45,18 +45,18 @@ exports.updateUser = async (req, res) => {
         user.name = name || user.name;
         user.apellido = apellido || user.apellido;
         user.email = email || user.email;
-        user.fechaNacimiento = fechaNacimiento || user.fechaNacimiento;
-        user.genero = genero || user.genero;
+        user.profile.fechaNacimiento = fechaNacimiento || user.profile.fechaNacimiento;
+        user.profile.genero = genero || user.profile.genero;
+        user.profile.estadoCivil = estadoCivil || user.profile.estadoCivil;
     
         // Actualizar los campos opcionales del perfil
         if (descripcion) user.profile.descripcion = descripcion;
         if (hobbies && Array.isArray(hobbies)) user.profile.hobbies = hobbies; // Verifica que sea un array
         if (socialLinks) {
-            if (socialLinks.tiktok) user.profile.socialLinks.tiktok = socialLinks.tiktok;
             if (socialLinks.facebook) user.profile.socialLinks.facebook = socialLinks.facebook;
             if (socialLinks.instagram) user.profile.socialLinks.instagram = socialLinks.instagram;
         }
-        if (ciudad) user.profile.ciudad = ciudad;
+        if (origen) user.profile.origen = origen;
 
         // En caso de que se actualice la contraseña, encriptarla antes de guardar
         if (password) {

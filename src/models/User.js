@@ -42,6 +42,11 @@ const UserSchema = new mongoose.Schema({
             enum: ['Masculino', 'Femenino', 'Otro'],
             required: true
         },
+        estadoCivil: {
+            type: String,
+            enum: ['Soltero', 'Casado', 'Divorciado', 'Viudo', 'Unión libre'],
+            required: false
+        },
         descripcion: {
             type: String,
             maxlength: 500,
@@ -52,10 +57,6 @@ const UserSchema = new mongoose.Schema({
             required: false
         }],
         socialLinks: {
-            tiktok: {
-                type: String,
-                match: [/^(https?:\/\/)?(www\.)?(tiktok\.com\/@[\w\-]+\/?)$/, 'Por favor, ingresa un enlace válido de TikTok'] ,  required: false
-            },
             facebook: {
                 type: String,
                 match: [/^(https?:\/\/)?(www\.)?facebook\.com\/.+$/, 'Por favor, ingresa un enlace válido de Facebook'] ,  required: false
@@ -65,9 +66,9 @@ const UserSchema = new mongoose.Schema({
                 match: [/^(https?:\/\/)?(www\.)?instagram\.com\/.+$/, 'Por favor, ingresa un enlace válido de Instagram'] ,  required: false
             }
         },
-        ciudad: {
-            type: String,
-            required: false
+        origen: { 
+            type: String, 
+            required: false 
         }
     },
     role: {
