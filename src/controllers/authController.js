@@ -6,7 +6,7 @@ const { jwtSecret, jwtExpire } = require('../config/jwt');
 
 exports.registerUser = async (req, res) => {
     const { name, apellido, fechaNacimiento, genero, email, password } = req.body;
-    
+
     try {
         // Verifica si el usuario ya existe
         const userExists = await User.exists({ email });
@@ -30,14 +30,14 @@ exports.registerUser = async (req, res) => {
         await newUser.save();
         res.status(201).json({ msg: 'User registered successfully' });
     } catch (err) {
-        console.error(err); 
+        console.error(err);
         res.status(500).json({ msg: 'Server error', error: err.message });
     }
 };
 
 exports.registerAdmin = async (req, res) => {
     const { name, email, password } = req.body;
-    
+
     try {
         // Verifica si el administrador ya existe
         const adminExists = await Admin.exists({ email });
@@ -63,30 +63,26 @@ exports.registerAdmin = async (req, res) => {
 exports.login = async (req, res) => {
     const { email, password } = req.body;
 
+    if (!email || !password) {
+        return res.status(400).json({ msg: "Todos los campos son obligatorios" });
+    }
+
     try {
-        console.log(`Intento de login con el correo: ${email}`);
-        
         const [admin, user] = await Promise.all([
             Admin.findOne({ email }).select('password _id').lean(),
             User.findOne({ email }).select('password _id').lean()
         ]);
 
+        if (!admin && !user) {
+            return res.status(404).json({ msg: "El correo no está registrado" });
+        }
+
         const account = admin || user;
         const isAdmin = Boolean(admin);
 
-        if (!account) {
-            console.log('Cuenta no encontrada');
-            return res.status(400).json({ msg: 'Credenciales inválidas' });
-        }
-
-        console.log('Cuenta encontrada:', account);
-
         const isMatch = await bcrypt.compare(password, account.password);
-        console.log('Resultado de la comparación de contraseña:', isMatch);
-
         if (!isMatch) {
-            console.log('Contraseña incorrecta');
-            return res.status(400).json({ msg: 'Credenciales inválidas' });
+            return res.status(400).json({ msg: "La contraseña es incorrecta" });
         }
 
         const payload = {
@@ -101,11 +97,11 @@ exports.login = async (req, res) => {
                 console.error('Error al firmar el token:', err);
                 throw err;
             }
-            console.log(`Token generado para ${isAdmin ? 'admin' : 'user'} con ID: ${account._id}`);
             res.json({ token, role: isAdmin ? 'admin' : 'user', userId: account._id });
         });
+
     } catch (err) {
-        console.error('Error en el login:', err.message);
         res.status(500).json({ msg: 'Error del servidor' });
     }
 };
+
