@@ -1,11 +1,14 @@
 const express = require('express');
+const { createServer } = require('http');
 const connectDB = require('./config/db');
 const routes = require('./routes');
 const cors = require('cors');
 const compression = require('./middleware/compression');
+const { initSocket } = require('./config/socket'); // Importa la configuración de sockets
 require('dotenv').config();
 
 const app = express();
+const server = createServer(app); // Crea el servidor HTTP
 const port = process.env.PORT || 5000;
 
 // Middleware para parsear JSON
@@ -23,6 +26,10 @@ connectDB();
 // Configuración de rutas
 app.use(routes);
 
-app.listen(port, () => {
+// Inicializar Socket.io
+initSocket(server); 
+
+server.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
 });
+

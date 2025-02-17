@@ -12,7 +12,9 @@ const publicationSchema = new mongoose.Schema({
     },
     image: { 
         type: String, 
-        default: 'https://res.cloudinary.com/dbgj8dqup/image/upload/v1726063964/uploads/byklgfhlcameojyxkbpj.jpg'  // Imagen por defecto
+    },
+    video: { 
+        type: String  
     },
     likes: [{ 
         type: mongoose.Schema.Types.ObjectId, 
