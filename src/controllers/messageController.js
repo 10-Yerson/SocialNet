@@ -1,5 +1,6 @@
 const Message = require("../models/Message");
 const { getIO } = require("../config/socket");
+const mongoose = require("mongoose");
 
 // 📩 Enviar un mensaje
 exports.sendMessage = async (req, res) => {
@@ -118,3 +119,81 @@ exports.deleteMessage = async (req, res) => {
         res.status(500).json({ error: "Error interno del servidor" });
     }
 };
+
+// 📥 Obtener la bandeja de entrada (últimos mensajes de cada conversación)
+exports.getInbox = async (req, res) => {
+    try {
+        const userId = new mongoose.Types.ObjectId(req.user.id);
+
+        // Obtener las últimas conversaciones donde el usuario es remitente o receptor
+        const conversations = await Message.aggregate([
+            {
+                $match: {
+                    $or: [{ sender: userId }, { receiver: userId }],
+                },
+            },
+            {
+                $sort: { createdAt: -1 }, // Ordenar por fecha descendente
+            },
+            {
+                $group: {
+                    _id: {
+                        $cond: [
+                            { $eq: ["$sender", userId] }, "$receiver", "$sender"
+                        ],
+                    },
+                    lastMessage: { $first: "$message" },
+                    lastMessageTime: { $first: "$createdAt" },
+                    unreadCount: {
+                        $sum: {
+                            $cond: [
+                                { $and: [{ $eq: ["$receiver", userId] }, { $eq: ["$seen", false] }] },
+                                1,
+                                0
+                            ],
+                        },
+                    },
+                },
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "user",
+                },
+            },
+            {
+                $project: {
+                    _id: 0,
+                    userId: "$_id",
+                    lastMessage: 1,
+                    lastMessageTime: 1,
+                    unreadCount: 1,
+                    user: {
+                        $arrayElemAt: ["$user", 0],
+                    },
+                },
+            },
+            {
+                $addFields: {
+                    "user.password": "$$REMOVE",
+                    "user.email": "$$REMOVE",
+                    "user.followers": "$$REMOVE",
+                    "user.following": "$$REMOVE",
+                    "user.profile": "$$REMOVE",
+                },
+            },
+            {
+                $sort: { lastMessageTime: -1 },
+            },
+        ]);
+
+        res.json(conversations);
+    } catch (error) {
+        console.error("Error al obtener bandeja de entrada:", error);
+        res.status(500).json({ error: "Error interno del servidor" });
+    }
+};
+
+
