@@ -2,6 +2,10 @@ const User = require('../models/User');
 const cloudinary = require('../config/cloudinary');
 const { Readable } = require('stream');
 const bcrypt = require('bcryptjs');
+const Publication  = require('../models/Publication');
+const FriendRequest = require('../models/FriendRequest');
+const Message = require('../models/Message');
+const Notification = require('../models/Notification');
 
 // Obtener todos los usuarios
 exports.getUsers = async (req, res) => {
@@ -48,7 +52,7 @@ exports.updateUser = async (req, res) => {
         user.profile.fechaNacimiento = fechaNacimiento || user.profile.fechaNacimiento;
         user.profile.genero = genero || user.profile.genero;
         user.profile.estadoCivil = estadoCivil || user.profile.estadoCivil;
-    
+
         // Actualizar los campos opcionales del perfil
         if (descripcion) user.profile.descripcion = descripcion;
         if (hobbies && Array.isArray(hobbies)) user.profile.hobbies = hobbies; // Verifica que sea un array
@@ -76,21 +80,69 @@ exports.updateUser = async (req, res) => {
 // Eliminar un usuario
 exports.deleteUser = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id);
+        const userId = req.params.id;
+
+        // Buscar usuario
+        const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ msg: 'User not found' });
         }
 
-        await user.remove();
-        res.json({ msg: 'User removed successfully' });
-    } catch (err) {
-        if (err.kind === 'ObjectId') {
-            return res.status(400).json({ msg: 'Invalid user ID' });
+        // 1️⃣ Eliminar imagen de perfil si no es la predeterminada
+        if (user.profilePicture && !user.profilePicture.includes("default")) {
+            const publicId = user.profilePicture.split('/').pop().split('.')[0];
+            await cloudinary.uploader.destroy(publicId);
         }
+
+        // 2️⃣ Buscar publicaciones del usuario
+        const publications = await Publication.find({ user: userId });
+
+        // 3️⃣ Eliminar imágenes y videos de Cloudinary
+        for (let pub of publications) {
+            if (pub.image) {
+                const imgPublicId = pub.image.split('/').pop().split('.')[0];
+                await cloudinary.uploader.destroy(imgPublicId);
+            }
+            if (pub.video) {
+                const vidPublicId = pub.video.split('/').pop().split('.')[0];
+                await cloudinary.uploader.destroy(vidPublicId, { resource_type: "video" });
+            }
+        }
+
+        // 4️⃣ Eliminar publicaciones del usuario
+        await Publication.deleteMany({ user: userId });
+
+        // 5️⃣ Eliminar likes del usuario en otras publicaciones
+        await Publication.updateMany(
+            { likes: userId },
+            { $pull: { likes: userId } }
+        );
+
+        // 6️⃣ Eliminar solicitudes de amistad (enviadas y recibidas)
+        await FriendRequest.deleteMany({
+            $or: [{ sender: userId }, { receiver: userId }]
+        });
+
+        // 7️⃣ Eliminar mensajes (enviados y recibidos)
+        await Message.deleteMany({
+            $or: [{ sender: userId }, { receiver: userId }]
+        });
+
+        // 8️⃣ Eliminar notificaciones (enviadas y recibidas)
+        await Notification.deleteMany({
+            $or: [{ sender: userId }, { recipient: userId }]
+        });
+
+        // 9️⃣ Finalmente, eliminar el usuario
+        await user.deleteOne();
+
+        res.json({ msg: 'User and all related data removed successfully' });
+
+    } catch (err) {
+        console.error('Error deleting user:', err);
         res.status(500).json({ msg: 'Server error' });
     }
 };
-
 
 // Función para subir archivos a Cloudinary
 const uploadToCloudinary = (file) => {

@@ -11,7 +11,7 @@ const initSocket = (server) => {
     });
 
     io.on("connection", (socket) => {
-        console.log("Nuevo usuario conectado:", socket.id);
+        //console.log("Nuevo usuario conectado:", socket.id);
 
         // Manejar usuario en línea
         socket.on("join", (userId) => {
@@ -23,7 +23,7 @@ const initSocket = (server) => {
 
             activeUsers.get(userId).add(socket.id); // Agregar el socketId al conjunto
 
-            console.log(`Usuario ${userId} conectado`);
+            //console.log(`Usuario ${userId} conectado`);
             io.emit("activeUsers", Array.from(activeUsers.keys()));
             io.emit("userOnline", userId);
         });
@@ -37,7 +37,7 @@ const initSocket = (server) => {
                     io.to(socketId).emit("receiveMessage", { sender, message });
                 });
             } else {
-                console.log(`Usuario ${receiver} no está en línea. Mensaje no entregado.`);
+                //console.log(`Usuario ${receiver} no está en línea. Mensaje no entregado.`);
                 // Aquí podrías guardar el mensaje en la DB para que lo reciba cuando se conecte
             }
         });
