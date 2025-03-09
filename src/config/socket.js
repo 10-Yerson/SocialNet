@@ -1,4 +1,5 @@
 const { Server } = require("socket.io");
+const pendingMessages = new Map(); // Store unread messages for offline users
 
 let io;
 const activeUsers = new Map(); // Mapa para rastrear usuarios activos con múltiples conexiones
@@ -11,7 +12,6 @@ const initSocket = (server) => {
     });
 
     io.on("connection", (socket) => {
-        //console.log("Nuevo usuario conectado:", socket.id);
 
         // Manejar usuario en línea
         socket.on("join", (userId) => {
@@ -23,7 +23,16 @@ const initSocket = (server) => {
 
             activeUsers.get(userId).add(socket.id); // Agregar el socketId al conjunto
 
-            //console.log(`Usuario ${userId} conectado`);
+            // Send any pending messages to the user
+            if (pendingMessages.has(userId) && pendingMessages.get(userId).length > 0) {
+                const messages = pendingMessages.get(userId);
+                messages.forEach(msg => {
+                    socket.emit("pendingMessages", msg);
+                });
+                // Clear pending messages after delivery
+                pendingMessages.delete(userId);
+            }
+
             io.emit("activeUsers", Array.from(activeUsers.keys()));
             io.emit("userOnline", userId);
         });
@@ -37,8 +46,11 @@ const initSocket = (server) => {
                     io.to(socketId).emit("receiveMessage", { sender, message });
                 });
             } else {
-                //console.log(`Usuario ${receiver} no está en línea. Mensaje no entregado.`);
                 // Aquí podrías guardar el mensaje en la DB para que lo reciba cuando se conecte
+                if (!pendingMessages.has(receiver)) {
+                    pendingMessages.set(receiver, []);
+                }
+                pendingMessages.get(receiver).push({ sender, message });
             }
         });
 
