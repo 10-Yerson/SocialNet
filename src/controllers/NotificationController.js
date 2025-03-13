@@ -1,10 +1,12 @@
 const Notification = require('../models/Notification');
 const User = require('../models/User');
+const { sendRealTimeNotification } = require('../config/socket');
 
 // Enviar una notificación a un usuario
 exports.sendNotification = async (recipientId, senderId, message) => {
     try {
         const recipient = await User.findById(recipientId);
+        const sender = await User.findById(senderId);
 
         if (!recipient) {
             console.error('Usuario destinatario no encontrado');
@@ -18,7 +20,26 @@ exports.sendNotification = async (recipientId, senderId, message) => {
         });
 
         await notification.save();
-        console.log('Notificación enviada');
+        
+        // Preparar objeto de notificación con datos del remitente
+        const notificationData = {
+            _id: notification._id,
+            sender: {
+                _id: sender._id,
+                name: sender.name,
+                apellido: sender.apellido, 
+                profilePicture: sender.profilePicture, 
+            },
+            message,
+            createdAt: notification.createdAt
+        };
+
+        // Intentar enviar la notificación en tiempo real
+        const sent = sendRealTimeNotification(recipientId, notificationData);
+        
+        console.log(`Notificación ${sent ? 'enviada en tiempo real' : 'guardada para entrega posterior'}`);
+        
+        return notification;
     } catch (err) {
         console.error('Error al enviar notificación:', err.message);
     }

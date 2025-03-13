@@ -1,5 +1,6 @@
 const { Server } = require("socket.io");
 const pendingMessages = new Map(); // Store unread messages for offline users
+const pendingNotifications = new Map(); // Store unread notifications for offline users
 
 let io;
 const activeUsers = new Map(); // Mapa para rastrear usuarios activos con múltiples conexiones
@@ -31,6 +32,16 @@ const initSocket = (server) => {
                 });
                 // Clear pending messages after delivery
                 pendingMessages.delete(userId);
+            }
+
+            // Send any pending notifications to the user
+            if (pendingNotifications.has(userId) && pendingNotifications.get(userId).length > 0) {
+                const notifications = pendingNotifications.get(userId);
+                notifications.forEach(notification => {
+                    socket.emit("newNotification", notification);
+                });
+                // Clear pending notifications after delivery
+                pendingNotifications.delete(userId);
             }
 
             io.emit("activeUsers", Array.from(activeUsers.keys()));
@@ -78,6 +89,25 @@ const initSocket = (server) => {
     });
 };
 
+// Método para enviar notificaciones en tiempo real
+const sendRealTimeNotification = (recipientId, notification) => {
+    const receiverSockets = activeUsers.get(recipientId);
+
+    if (receiverSockets && receiverSockets.size > 0) {
+        receiverSockets.forEach((socketId) => {
+            io.to(socketId).emit("newNotification", notification);
+        });
+        return true; // Notificación enviada en tiempo real
+    } else {
+        // Guardar notificación para cuando el usuario se conecte
+        if (!pendingNotifications.has(recipientId)) {
+            pendingNotifications.set(recipientId, []);
+        }
+        pendingNotifications.get(recipientId).push(notification);
+        return false; // Usuario no está conectado
+    }
+};
+
 const getIO = () => io;
 
-module.exports = { initSocket, getIO };
+module.exports = { initSocket, getIO, sendRealTimeNotification };
