@@ -98,8 +98,7 @@ exports.getPublicationComments = async (req, res) => {
         .populate({
             path: 'replies',
             populate: {
-                path: 'user',
-                select: 'name profilePicture'
+                path: 'user',                select: 'name profilePicture'
             }
         })
         .sort({ createdAt: -1 });
