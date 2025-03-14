@@ -3,52 +3,101 @@ const User = require('../models/User');
 const { sendRealTimeNotification } = require('../config/socket');
 
 // Enviar una notificación a un usuario
-exports.sendNotification = async (recipientId, senderId, message) => {
+exports.sendNotification = async (recipientId, senderId, message, type = 'other', reference = null, refModel = null) => {
     try {
-        const recipient = await User.findById(recipientId);
-        const sender = await User.findById(senderId);
+        // Convertir IDs a strings para consistencia
+        const recipientIdStr = recipientId.toString();
+        const senderIdStr = senderId.toString();
 
-        if (!recipient) {
-            console.error('Usuario destinatario no encontrado');
-            return;
+        // Registrar los IDs exactos que se están utilizando
+        console.log(`Enviando notificación: destinatario=${recipientIdStr}, remitente=${senderIdStr}, tipo=${type}`);
+
+        // Verificar que los usuarios existen
+        const recipient = await User.findById(recipientIdStr);
+        const sender = await User.findById(senderIdStr);
+
+        if (!recipient || !sender) {
+            console.error('Usuario destinatario o remitente no encontrado');
+            return null;
         }
 
-        const notification = new Notification({
-            recipient: recipientId,
-            sender: senderId,
-            message,
-        });
-
-        await notification.save();
-        
-        // Preparar objeto de notificación con datos del remitente
+        // Crear la notificación
         const notificationData = {
-            _id: notification._id,
-            sender: {
-                _id: sender._id,
-                name: sender.name,
-                apellido: sender.apellido, 
-                profilePicture: sender.profilePicture, 
-            },
+            recipient: recipientIdStr,
+            sender: senderIdStr,
             message,
-            createdAt: notification.createdAt
+            type,
+            read: false
         };
 
-        // Intentar enviar la notificación en tiempo real
-        const sent = sendRealTimeNotification(recipientId, notificationData);
-        
-        console.log(`Notificación ${sent ? 'enviada en tiempo real' : 'guardada para entrega posterior'}`);
-        
+        // Agregar referencias si están presentes
+        if (reference) {
+            notificationData.reference = reference.toString();
+            notificationData.refModel = refModel;
+
+            // Log específico para notificaciones de tipo like
+            if (type === 'like') {
+                console.log('Notificación de like con referencia:', {
+                    referenceId: reference.toString(),
+                    refModel: refModel
+                });
+            }
+        }
+
+        // Guardar la notificación en la base de datos
+        const notification = new Notification(notificationData);
+        await notification.save();
+
+        // Hacer un populate completo para obtener todos los datos necesarios
+        const populatedNotification = await Notification.findById(notification._id)
+            .populate('sender', '_id name apellido profilePicture');
+
+        // Preparar la notificación para enviarla por socket
+        const notificationForClient = {
+            _id: populatedNotification._id,
+            sender: {
+                _id: populatedNotification.sender._id,
+                name: populatedNotification.sender.name,
+                apellido: populatedNotification.sender.apellido,
+                profilePicture: populatedNotification.sender.profilePicture
+            },
+            message: populatedNotification.message,
+            type: populatedNotification.type,
+            read: populatedNotification.read,
+            createdAt: populatedNotification.createdAt
+        };
+
+        // Agregar la referencia si existe
+        if (reference) {
+            notificationForClient.reference = reference.toString();
+            notificationForClient.refModel = refModel;
+        }
+
+        // Logs para depuración
+        console.log(`Enviando notificación de tipo ${type} a usuario ${recipientIdStr}`);
+
+        // Para notificaciones de tipo like, añadir un log específico
+        if (type === 'like') {
+            console.log('Detalles de notificación de like:');
+            console.log(JSON.stringify(notificationForClient, null, 2));
+        }
+
+        // Enviar la notificación a través de socket.io
+        const sent = sendRealTimeNotification(recipientIdStr, notificationForClient);
+
+        console.log(`Notificación de tipo ${type} ${sent ? 'enviada en tiempo real' : 'guardada para entrega posterior'}`);
+
         return notification;
     } catch (err) {
-        console.error('Error al enviar notificación:', err.message);
+        console.error('Error al enviar notificación:', err);
+        return null;
     }
 };
 
 // Obtener notificaciones de un usuario
 exports.getNotifications = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user.id.toString();
         const notifications = await Notification.find({ recipient: userId })
             .populate('sender', 'name apellido profilePicture')
             .sort({ createdAt: -1 });
@@ -59,7 +108,6 @@ exports.getNotifications = async (req, res) => {
         return res.status(500).send('Error en el servidor');
     }
 };
-
 // Marcar una notificación como leída
 exports.markAsRead = async (req, res) => {
     try {

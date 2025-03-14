@@ -1,7 +1,8 @@
 const Publication = require('../models/Publication');
+const User = require('../models/User');
 const cloudinary = require('../config/cloudinary');
-const streamifier = require('streamifier'); 
-const User = require('../models/User'); 
+const streamifier = require('streamifier');
+const NotificationController = require('./NotificationController');
 
 exports.createPublication = async (req, res) => {
     try {
@@ -20,9 +21,9 @@ exports.createPublication = async (req, res) => {
                             allowed_formats: ['jpg', 'jpeg', 'png']  // Formatos permitidos
                         },
                         (error, result) => {
-                        if (error) reject(error);
-                        resolve(result);
-                    });
+                            if (error) reject(error);
+                            resolve(result);
+                        });
                     streamifier.createReadStream(buffer).pipe(upload);
                 });
             };
@@ -83,7 +84,7 @@ exports.getUserPublications = async (req, res) => {
 exports.getFollowedUsersPublications = async (req, res) => {
     try {
         const userId = req.user.id;
-        
+
         const user = await User.findById(userId).populate('following');
         const followedUserIds = user.following.map(followedUser => followedUser._id);
 
@@ -113,7 +114,7 @@ exports.getUserPublicationsById = async (req, res) => {
 
         // Verifica si el usuario sigue al usuario objetivo
         const isFollowing = user.following.map(String).includes(String(targetUserId));
-        
+
         // Si no sigue, responde con un mensaje indicando que no está siguiendo
         if (!isFollowing) {
             return res.json({ msg: 'Las publicaciones de este usuario son privadas. Síguelo para acceder a ellas', publications: [] });
@@ -187,9 +188,36 @@ exports.likePublication = async (req, res) => {
         publication.likes.push(req.user.id);
         await publication.save();
 
+        // Obtener información del usuario que da like
+        const likeUser = await User.findById(req.user.id);
+
+        // En likePublication, añade estos logs
+        console.log('Datos de la notificación de like:');
+        console.log('Tipo:', 'like');
+        console.log('Destinatario:', publication.user.toString());
+        console.log('Remitente:', req.user.id);
+        console.log('Referencia:', publication._id.toString());
+
+        // Enviar notificación al propietario de la publicación
+        // Solo si el usuario que da like no es el propietario
+        if (req.user.id !== publication.user.toString()) {
+            console.log('Enviando notificación de like');
+
+            const notificationSent = await NotificationController.sendNotification(
+                publication.user, // ID del destinatario
+                req.user.id,      // ID del remitente
+                `${likeUser.name} ha dado like a tu publicación.`,
+                'like',           // Tipo de notificación: like
+                publication._id,  // Referencia a la publicación
+                'Publication'     // Modelo de referencia
+            );
+
+            console.log('Resultado de envío de notificación:', notificationSent ? 'Enviada' : 'Error');
+        }
+
         res.json(publication.likes);
     } catch (err) {
-        console.error(err.message);
+        console.error('Error en likePublication:', err.message);
         res.status(500).send('Error en el servidor');
     }
 };

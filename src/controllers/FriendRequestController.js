@@ -29,8 +29,15 @@ exports.followUser = async (req, res) => {
         await user.save();
         await followUser.save();
 
-        // Enviar notificación al usuario seguido
-        await NotificationController.sendNotification(followUserId, userId, `${user.name} te está siguiendo.`);
+        // Enviar notificación al usuario seguido con tipo 'follow'
+        await NotificationController.sendNotification(
+            followUserId,
+            userId,
+            `${user.name} te está siguiendo.`,
+            'follow',  // Tipo de notificación: follow
+            followUserId,  // Referencia al usuario seguido
+            'User'  // Modelo de referencia
+        );
 
         return res.json({ msg: `Ahora sigues a ${followUser.name}`, isFollowing: true });
     } catch (err) {
