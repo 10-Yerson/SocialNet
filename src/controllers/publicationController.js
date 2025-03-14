@@ -179,28 +179,23 @@ exports.likePublication = async (req, res) => {
             return res.status(404).json({ msg: 'Publicación no encontrada' });
         }
 
-        // Verificar si el usuario ya ha dado like
         if (publication.likes.includes(req.user.id)) {
             return res.status(400).json({ msg: 'Ya le has dado like a esta publicación' });
         }
 
-        // Agregar el like
         publication.likes.push(req.user.id);
         await publication.save();
 
-        // Obtener información del usuario que da like
         const likeUser = await User.findById(req.user.id);
 
-        // Enviar notificación al propietario de la publicación
-        // Solo si el usuario que da like no es el propietario
         if (req.user.id !== publication.user.toString()) {
             await NotificationController.sendNotification(
-                publication.user, // ID del destinatario
-                req.user.id,      // ID del remitente
+                publication.user, 
+                req.user.id,     
                 `${likeUser.name} ha dado like a tu publicación.`,
-                'like',           // Tipo de notificación: like
-                publication._id,  // Referencia a la publicación
-                'Publication'     // Modelo de referencia
+                'like',           
+                publication._id,  
+                'Publication'     
             );
         }
 
