@@ -67,7 +67,7 @@ exports.createComment = async (req, res) => {
                 parentComment.user,
                 userId,
                 `${commentUser.name} ha respondido a tu comentario.`,
-                'reply',
+                'comment', // Usando 'comment' en lugar de 'reply' para mantener compatibilidad con el esquema
                 parentComment._id,
                 'Comment'
             );
