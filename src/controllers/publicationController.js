@@ -191,19 +191,10 @@ exports.likePublication = async (req, res) => {
         // Obtener información del usuario que da like
         const likeUser = await User.findById(req.user.id);
 
-        // En likePublication, añade estos logs
-        console.log('Datos de la notificación de like:');
-        console.log('Tipo:', 'like');
-        console.log('Destinatario:', publication.user.toString());
-        console.log('Remitente:', req.user.id);
-        console.log('Referencia:', publication._id.toString());
-
         // Enviar notificación al propietario de la publicación
         // Solo si el usuario que da like no es el propietario
         if (req.user.id !== publication.user.toString()) {
-            console.log('Enviando notificación de like');
-
-            const notificationSent = await NotificationController.sendNotification(
+            await NotificationController.sendNotification(
                 publication.user, // ID del destinatario
                 req.user.id,      // ID del remitente
                 `${likeUser.name} ha dado like a tu publicación.`,
@@ -211,8 +202,6 @@ exports.likePublication = async (req, res) => {
                 publication._id,  // Referencia a la publicación
                 'Publication'     // Modelo de referencia
             );
-
-            console.log('Resultado de envío de notificación:', notificationSent ? 'Enviada' : 'Error');
         }
 
         res.json(publication.likes);

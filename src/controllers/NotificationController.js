@@ -9,15 +9,11 @@ exports.sendNotification = async (recipientId, senderId, message, type = 'other'
         const recipientIdStr = recipientId.toString();
         const senderIdStr = senderId.toString();
 
-        // Registrar los IDs exactos que se están utilizando
-        console.log(`Enviando notificación: destinatario=${recipientIdStr}, remitente=${senderIdStr}, tipo=${type}`);
-
         // Verificar que los usuarios existen
         const recipient = await User.findById(recipientIdStr);
         const sender = await User.findById(senderIdStr);
 
         if (!recipient || !sender) {
-            console.error('Usuario destinatario o remitente no encontrado');
             return null;
         }
 
@@ -34,14 +30,6 @@ exports.sendNotification = async (recipientId, senderId, message, type = 'other'
         if (reference) {
             notificationData.reference = reference.toString();
             notificationData.refModel = refModel;
-
-            // Log específico para notificaciones de tipo like
-            if (type === 'like') {
-                console.log('Notificación de like con referencia:', {
-                    referenceId: reference.toString(),
-                    refModel: refModel
-                });
-            }
         }
 
         // Guardar la notificación en la base de datos
@@ -73,19 +61,8 @@ exports.sendNotification = async (recipientId, senderId, message, type = 'other'
             notificationForClient.refModel = refModel;
         }
 
-        // Logs para depuración
-        console.log(`Enviando notificación de tipo ${type} a usuario ${recipientIdStr}`);
-
-        // Para notificaciones de tipo like, añadir un log específico
-        if (type === 'like') {
-            console.log('Detalles de notificación de like:');
-            console.log(JSON.stringify(notificationForClient, null, 2));
-        }
-
         // Enviar la notificación a través de socket.io
         const sent = sendRealTimeNotification(recipientIdStr, notificationForClient);
-
-        console.log(`Notificación de tipo ${type} ${sent ? 'enviada en tiempo real' : 'guardada para entrega posterior'}`);
 
         return notification;
     } catch (err) {
