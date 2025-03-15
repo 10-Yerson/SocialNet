@@ -13,6 +13,9 @@ router.get('/all', auth, authorize('user', 'admin'), publicationController.getAl
 // Obtener las publicaciones del usuario autenticado
 router.get('/user', auth, authorize('user', 'admin'), publicationController.getUserPublications);
 
+// Obtener  publicaciones por id
+router.get('/:id', auth, authorize('user', 'admin'), publicationController.getPublicationById);
+
 // Obtener las publicaciones de los usuarios seguidos
 router.get('/following', auth, authorize('user', 'admin'), publicationController.getFollowedUsersPublications);
 

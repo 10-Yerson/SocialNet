@@ -247,3 +247,34 @@ exports.getPublicationLikes = async (req, res) => {
     }
 };
 
+// Obtener una publicación por su ID
+exports.getPublicationById = async (req, res) => {
+    try {
+        const publicationId = req.params.id;
+        const userId = req.user.id; // ID del usuario autenticado
+
+        // Validar que el ID de la publicación sea válido
+        if (!publicationId) {
+            return res.status(400).json({ message: 'Publication ID is required' });
+        }
+
+        // Buscar la publicación en la base de datos
+        const publication = await Publication.findById(publicationId)
+            .populate('user', 'name profilePicture');
+
+        // Si no se encuentra la publicación
+        if (!publication) {
+            return res.status(404).json({ message: 'Publication not found' });
+        }
+
+        // Añadir campo para verificar si el usuario ha dado like
+        const publicationWithLikeStatus = {
+            ...publication._doc,
+            likedByUser: publication.likes.includes(userId)
+        };
+
+        res.json(publicationWithLikeStatus);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching publication', error: error.message });
+    }
+};
