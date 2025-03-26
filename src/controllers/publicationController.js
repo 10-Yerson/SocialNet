@@ -7,50 +7,57 @@ const NotificationController = require('./NotificationController');
 exports.createPublication = async (req, res) => {
     try {
         const { description } = req.body;
-        const user = req.user.id;  // Suponiendo que ya tienes autenticación
+        const user = req.user.id;
         let imageUrl = '';
+        let videoUrl = '';
 
-        // Verifica si hay un archivo (imagen) en la solicitud
-        if (req.file) {
-            // Subir la imagen a Cloudinary usando streams
-            const uploadStream = async (buffer) => {
-                return new Promise((resolve, reject) => {
-                    const upload = cloudinary.uploader.upload_stream(
-                        {
-                            folder: 'Publications',  // Especifica la carpeta en Cloudinary
-                            allowed_formats: ['jpg', 'jpeg', 'png']  // Formatos permitidos
-                        },
-                        (error, result) => {
-                            if (error) reject(error);
-                            resolve(result);
-                        });
-                    streamifier.createReadStream(buffer).pipe(upload);
-                });
-            };
+        // Función para subir archivos a Cloudinary
+        const uploadStream = async (buffer, folder, resource_type) => {
+            return new Promise((resolve, reject) => {
+                const upload = cloudinary.uploader.upload_stream(
+                    { folder, resource_type },
+                    (error, result) => {
+                        if (error) reject(error);
+                        resolve(result);
+                    }
+                );
+                streamifier.createReadStream(buffer).pipe(upload);
+            });
+        };
 
-            const result = await uploadStream(req.file.buffer);  // Supone que estás usando multer para manejar el archivo
-            imageUrl = result.secure_url;  // Obtén la URL de la imagen subida
+        // Verifica si el usuario subió una imagen
+        if (req.file && req.file.mimetype.startsWith('image/')) {
+            const result = await uploadStream(req.file.buffer, 'Publications', 'image');
+            imageUrl = result.secure_url;
         }
 
+        // Verifica si el usuario subió un video
+        if (req.file && req.file.mimetype.startsWith('video/')) {
+            const result = await uploadStream(req.file.buffer, 'Publications', 'video');
+            videoUrl = result.secure_url;
+        }
+
+        // Guardar la publicación en la base de datos
         const newPublication = new Publication({
             user,
             description,
-            image: imageUrl || 'https://res.cloudinary.com/dbgj8dqup/image/upload/v1726063964/uploads/byklgfhlcameojyxkbpj.jpg'  // Imagen por defecto si no hay subida
+            image: imageUrl || '',
+            video: videoUrl || ''
         });
 
         await newPublication.save();
-        res.status(201).json({ message: 'Publication created', publication: newPublication });
+        res.status(201).json({ message: 'Publicación creada', publication: newPublication });
     } catch (error) {
-        res.status(500).json({ message: 'Error creating publication', error: error.message });
+        res.status(500).json({ message: 'Error al crear publicación', error: error.message });
     }
 };
-
+                
 // Obtener todas las publicaciones
 exports.getAllPublications = async (req, res) => {
     try {
         const userId = req.user.id;  // ID del usuario autenticado
 
-        const publications = await Publication.find()
+        const publications   = await Publication.find()
             .populate('user', 'name profilePicture')
             .sort({ createdAt: -1 });
 

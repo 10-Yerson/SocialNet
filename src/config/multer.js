@@ -1,22 +1,22 @@
 const multer = require('multer');
 
-// Configuración de multer para almacenar archivos en memoria (buffer)
-const storage = multer.memoryStorage();  // Almacena la imagen en un buffer temporal en memoria
+// Almacenar archivos en memoria (buffer)
+const storage = multer.memoryStorage();
 
-// Solo permitimos la subida de archivos de imagen
+// Filtro para permitir imágenes y videos
 const fileFilter = (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-        cb(null, true);  // Acepta la imagen
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+        cb(null, true); // Aceptar el archivo
     } else {
-        cb(new Error('Tipo de archivo inválido: solo se permiten imágenes.'), false);  // Rechaza el archivo si no es una imagen
+        cb(new Error('Tipo de archivo inválido: solo imágenes y videos permitidos.'), false);
     }
 };
 
-// Limita el tamaño del archivo a 5MB
-const upload = multer({ 
-    storage, 
+// Límite de tamaño: 5MB para imágenes y 50MB para videos
+const upload = multer({
+    storage,
     fileFilter,
-    limits: { fileSize: 5 * 1024 * 1024 }  // 5 MB
+    limits: { fileSize: 50 * 1024 * 1024 } // 50MB máximo
 });
 
 module.exports = upload;
