@@ -90,7 +90,7 @@ exports.deleteUser = async (req, res) => {
 
         // 1️⃣ Eliminar imagen de perfil si no es la predeterminada
         if (user.profilePicture && !user.profilePicture.includes("default")) {
-            const publicId = user.profilePicture.split('/').pop().split('.')[0];
+            const publicId = `Profiles/${user.profilePicture.split('/').pop().split('.')[0]}`;
             await cloudinary.uploader.destroy(publicId);
         }
 

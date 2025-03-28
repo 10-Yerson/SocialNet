@@ -27,13 +27,13 @@ exports.createPublication = async (req, res) => {
 
         // Verifica si el usuario subió una imagen
         if (req.file && req.file.mimetype.startsWith('image/')) {
-            const result = await uploadStream(req.file.buffer, 'Publications', 'image');
+            const result = await uploadStream(req.file.buffer, 'Publications/image', 'image');
             imageUrl = result.secure_url;
         }
 
         // Verifica si el usuario subió un video
         if (req.file && req.file.mimetype.startsWith('video/')) {
-            const result = await uploadStream(req.file.buffer, 'Publications', 'video');
+            const result = await uploadStream(req.file.buffer, 'Publications/video', 'video');
             videoUrl = result.secure_url;
         }
 
