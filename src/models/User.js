@@ -21,7 +21,7 @@ const UserSchema = new mongoose.Schema({
     },
     profilePicture: {
         type: String,
-        default: 'https://res.cloudinary.com/dbgj8dqup/image/upload/v1736018824/uploads/kz3a1ry9sxqmhal2xexa.png' // URL de imagen por defecto
+        default: 'https://res.cloudinary.com/dbgj8dqup/image/upload/v1743182322/uploads/ixv6tw8jfbhykflcmyex.png' // URL de imagen por defecto
     },
     followers: [{ 
         type: mongoose.Schema.Types.ObjectId, 
