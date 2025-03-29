@@ -2,7 +2,7 @@ const User = require('../models/User');
 const cloudinary = require('../config/cloudinary');
 const { Readable } = require('stream');
 const bcrypt = require('bcryptjs');
-const Publication  = require('../models/Publication');
+const Publication = require('../models/Publication');
 const FriendRequest = require('../models/FriendRequest');
 const Message = require('../models/Message');
 const Notification = require('../models/Notification');
@@ -90,8 +90,8 @@ exports.deleteUser = async (req, res) => {
 
         // 1️⃣ Eliminar imagen de perfil si no es la predeterminada
         if (user.profilePicture && !user.profilePicture.includes("default")) {
-            const publicId = `Profiles/${user.profilePicture.split('/').pop().split('.')[0]}`;
-            await cloudinary.uploader.destroy(publicId);
+            const publicId = extractPublicId(user.profilePicture, 'Profiles');
+            if (publicId) await cloudinary.uploader.destroy(publicId);
         }
 
         // 2️⃣ Buscar publicaciones del usuario
@@ -100,15 +100,15 @@ exports.deleteUser = async (req, res) => {
         // 3️⃣ Eliminar imágenes y videos de Cloudinary
         for (let pub of publications) {
             if (pub.image) {
-                const imgPublicId = pub.image.split('/').pop().split('.')[0];
-                await cloudinary.uploader.destroy(imgPublicId);
+                const imgPublicId = extractPublicId(pub.image, 'Publications/image');
+                if (imgPublicId) await cloudinary.uploader.destroy(imgPublicId);
             }
             if (pub.video) {
-                const vidPublicId = pub.video.split('/').pop().split('.')[0];
-                await cloudinary.uploader.destroy(vidPublicId, { resource_type: "video" });
+                const vidPublicId = extractPublicId(pub.video, 'Publications/video');
+                if (vidPublicId) await cloudinary.uploader.destroy(vidPublicId, { resource_type: "video" });
             }
         }
-
+        
         // 4️⃣ Eliminar publicaciones del usuario
         await Publication.deleteMany({ user: userId });
 
@@ -192,3 +192,21 @@ exports.uploadProfilePicture = async (req, res) => {
         res.status(500).json({ error: 'Error uploading profile picture' });
     }
 };
+
+// Función auxiliar para extraer el public_id de Cloudinary
+function extractPublicId(url, folder) {
+    try {
+        // Extraer la parte final de la URL (después del último '/')
+        const segments = url.split('/');
+        const filename = segments[segments.length - 1];
+        
+        // Extraer el nombre del archivo sin la extensión
+        const filenameWithoutExt = filename.split('.')[0];
+        
+        // Devolver el public_id completo incluyendo la carpeta
+        return `${folder}/${filenameWithoutExt}`;
+    } catch (error) {
+        console.error('Error extracting public ID:', error);
+        return null;
+    }
+}
