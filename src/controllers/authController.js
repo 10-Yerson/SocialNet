@@ -98,13 +98,14 @@ exports.login = async (req, res) => {
                 throw err;
             }
 
-            // Configura solo una cookie con el token JWT (httpOnly para seguridad)
             res.cookie('auth_token', token, {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'Strict',
-                maxAge: 7 * 24 * 60 * 60 * 1000 /// 7 día
+                secure: true, // Debe ser true en producción con HTTPS
+                // secure: process.env.NODE_ENV === 'production',
+                sameSite: 'None', // Permite el envío de cookies entre dominios diferentes
+                maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
             });
+
 
             // Envía los datos en la respuesta solo para el login inicial
             const role = isAdmin ? 'admin' : 'user';
