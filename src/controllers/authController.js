@@ -106,21 +106,8 @@ exports.login = async (req, res) => {
                 maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
             });
 
-
-            // Envía los datos en la respuesta solo para el login inicial
-            const role = isAdmin ? 'admin' : 'user';
-            const userId = account._id.toString(); // Asegurar que es string
-
-            // Establecer cookies
-            res.cookie('role', role, { secure: true, sameSite: 'Strict' });
-            res.cookie('userId', userId, { secure: true, sameSite: 'Strict' });
-
             // Enviar respuesta JSON
-            res.json({ role, userId });
-
-            console.log(document.cookie);
-
-
+            res.json({ msg: "Login exitoso" });
 
         });
 
@@ -144,6 +131,10 @@ exports.logout = (req, res) => {
 exports.checkAuth = (req, res) => {
     // req.user ya está disponible gracias al middleware auth
     res.json({ role: req.user.role });
+};
+
+exports.getUserInfo = (req, res) => {
+    res.json({ userId: req.user.id, role: req.user.role });
 };
 
 
