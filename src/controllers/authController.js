@@ -98,16 +98,27 @@ exports.login = async (req, res) => {
                 throw err;
             }
 
-            res.cookie('auth_token', token, {
-                httpOnly: true,
-                secure: true, // Debe ser true en producción con HTTPS
-                // secure: process.env.NODE_ENV === 'production',
-                sameSite: 'None', // Permite el envío de cookies entre dominios diferentes
-                maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
-            });
+            // Verificar el entorno
+            if (process.env.NODE_ENV === 'production') {
+                // Configuración para producción
+                res.cookie('auth_token', token, {
+                    httpOnly: true,
+                    secure: true, // Habilita HTTPS en producción
+                    sameSite: 'None', // Permite cross-origin en producción
+                    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
+                });
+            } else {
+                // Configuración para desarrollo local
+                res.cookie('auth_token', token, {
+                    httpOnly: true,
+                    secure: false, // No es necesario HTTPS en desarrollo
+                    sameSite: 'Lax', // Restricción moderada para mismo dominio
+                    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
+                });
+            }
 
-            // Enviar respuesta JSON
-            res.json({ msg: "Login exitoso" });
+            // Enviar respuesta con el rol
+            res.json({ msg: "Login exitoso", role: isAdmin ? 'admin' : 'user' });
 
         });
 
