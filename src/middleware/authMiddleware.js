@@ -3,14 +3,19 @@ const { jwtSecret } = require('../config/jwt');
 
 // Middleware para verificar el token y agregar el usuario al request
 const auth = (req, res, next) => {
-    const token = req.header('x-auth-token');
+    // Intenta obtener token de la cookie primero
+    const tokenFromCookie = req.cookies.auth_token;
+    // Como fallback, intenta obtener el token del header
+    const tokenFromHeader = req.header('x-auth-token');
+    
+    const token = tokenFromCookie || tokenFromHeader;
+    
     if (!token) {
         return res.status(401).json({ msg: 'No token, authorization denied' });
     }
     try {
         const decoded = jwt.verify(token, jwtSecret);
         req.user = decoded.user;
-        // console.log('Authenticated user:', req.user);
         next();
     } catch (err) {
         res.status(401).json({ msg: 'Token is not valid' });

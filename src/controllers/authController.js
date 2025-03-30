@@ -97,11 +97,52 @@ exports.login = async (req, res) => {
                 console.error('Error al firmar el token:', err);
                 throw err;
             }
-            res.json({ token, role: isAdmin ? 'admin' : 'user', userId: account._id });
+
+            // Configura solo una cookie con el token JWT (httpOnly para seguridad)
+            res.cookie('auth_token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'Strict',
+                maxAge: 7 * 24 * 60 * 60 * 1000 /// 7 día
+            });
+
+            // Envía los datos en la respuesta solo para el login inicial
+            const role = isAdmin ? 'admin' : 'user';
+            const userId = account._id.toString(); // Asegurar que es string
+
+            // Establecer cookies
+            res.cookie('role', role, { secure: true, sameSite: 'Strict' });
+            res.cookie('userId', userId, { secure: true, sameSite: 'Strict' });
+
+            // Enviar respuesta JSON
+            res.json({ role, userId });
+
+            console.log(document.cookie);
+
+
+
         });
 
     } catch (err) {
+        console.error(err);
         res.status(500).json({ msg: 'Error del servidor' });
     }
 };
+
+// También actualiza el logout para eliminar solo la cookie auth_token
+exports.logout = (req, res) => {
+    res.clearCookie('auth_token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Strict'
+    });
+    res.json({ msg: 'Logout exitoso' });
+};
+
+// Ruta para verificar autenticación
+exports.checkAuth = (req, res) => {
+    // req.user ya está disponible gracias al middleware auth
+    res.json({ role: req.user.role });
+};
+
 
