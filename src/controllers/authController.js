@@ -131,13 +131,14 @@ exports.login = async (req, res) => {
 // También actualiza el logout para eliminar solo la cookie auth_token
 exports.logout = (req, res) => {
     res.clearCookie('auth_token', {
+        path: '/',
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.FRONTEND_URL=== 'production' ? 'None' : 'Lax',
-        domain: process.env.FRONTEND_URL ? new URL(process.env.FRONTEND_URL).hostname : undefined
-    });
+        sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+       });
     res.json({ msg: 'Logout exitoso' });
 };
+
 
 // Ruta para verificar autenticación
 exports.checkAuth = (req, res) => {
