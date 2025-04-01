@@ -18,10 +18,12 @@ app.use(express.json());
 // Middleware para parsear cookies
 app.use(cookieParser());
 
-// Middleware para CORScookies
+// Middleware de CORS (Debe ir antes de las rutas)
 app.use(cors({
-    origin: process.env.FRONTEND_URL ,
-    credentials: true 
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Agregar OPTIONS
+    allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 // Middleware para compresión

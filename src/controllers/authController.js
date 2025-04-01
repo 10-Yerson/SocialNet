@@ -133,7 +133,8 @@ exports.logout = (req, res) => {
     res.clearCookie('auth_token', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'Strict'
+        sameSite: process.env.FRONTEND_URL=== 'production' ? 'None' : 'Lax',
+        domain: process.env.FRONTEND_URL ? new URL(process.env.FRONTEND_URL).hostname : undefined
     });
     res.json({ msg: 'Logout exitoso' });
 };
