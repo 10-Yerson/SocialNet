@@ -108,7 +108,7 @@ exports.deleteUser = async (req, res) => {
                 if (vidPublicId) await cloudinary.uploader.destroy(vidPublicId, { resource_type: "video" });
             }
         }
-        
+
         // 4️⃣ Eliminar publicaciones del usuario
         await Publication.deleteMany({ user: userId });
 
@@ -168,6 +168,8 @@ const uploadToCloudinary = (file) => {
 // Controlador para manejar la subida de archivos y actualización del perfil del usuario
 exports.uploadProfilePicture = async (req, res) => {
     try {
+        console.log("Archivo recibido:", req.file); // 🔍 LOG PARA DEBUG
+
         if (!req.file) {
             return res.status(400).json({ msg: 'No file uploaded' });
         }
@@ -175,7 +177,7 @@ exports.uploadProfilePicture = async (req, res) => {
         // Subir archivo a Cloudinary
         const result = await uploadToCloudinary(req.file);
 
-        // Actualizar la URL de la imagen en el perfil del usuario
+        // Actualizar URL en el usuario
         const user = await User.findById(req.params.id);
         if (!user) {
             return res.status(404).json({ msg: 'User not found' });
@@ -189,9 +191,11 @@ exports.uploadProfilePicture = async (req, res) => {
             profilePicture: result.secure_url
         });
     } catch (error) {
+        console.error("Error en el backend:", error);
         res.status(500).json({ error: 'Error uploading profile picture' });
     }
 };
+
 
 // Función auxiliar para extraer el public_id de Cloudinary
 function extractPublicId(url, folder) {
@@ -199,10 +203,10 @@ function extractPublicId(url, folder) {
         // Extraer la parte final de la URL (después del último '/')
         const segments = url.split('/');
         const filename = segments[segments.length - 1];
-        
+
         // Extraer el nombre del archivo sin la extensión
         const filenameWithoutExt = filename.split('.')[0];
-        
+
         // Devolver el public_id completo incluyendo la carpeta
         return `${folder}/${filenameWithoutExt}`;
     } catch (error) {
