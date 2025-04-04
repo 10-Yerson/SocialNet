@@ -112,7 +112,7 @@ exports.listUsersToFollow = async (req, res) => {
         const user = await User.findById(userId).select('following');
         const usersToFollow = await User.find({
             _id: { $ne: userId, $nin: user.following }
-        }).select('name profilePicture');
+        }).select('name apellido profilePicture');
 
         return res.json(usersToFollow);
     } catch (err) {
