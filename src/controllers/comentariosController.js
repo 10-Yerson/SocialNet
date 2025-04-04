@@ -49,7 +49,7 @@ exports.createComment = async (req, res) => {
 
         // Enviar notificación al dueño de la publicación (si el comentario es de otro usuario)
         const commentUser = await User.findById(userId);
-        
+
         if (userId !== publication.user.toString()) {
             await NotificationController.sendNotification(
                 publication.user,
@@ -60,7 +60,7 @@ exports.createComment = async (req, res) => {
                 'Publication'
             );
         }
-        
+
         // Si es respuesta a un comentario, notificar también al autor del comentario
         if (parentComment && userId !== parentComment.user.toString()) {
             await NotificationController.sendNotification(
@@ -73,9 +73,9 @@ exports.createComment = async (req, res) => {
             );
         }
 
-        res.status(201).json({ 
-            message: 'Comentario creado exitosamente', 
-            comment: commentWithUser 
+        res.status(201).json({
+            message: 'Comentario creado exitosamente',
+            comment: commentWithUser
         });
     } catch (error) {
         console.error('Error al crear comentario:', error);
@@ -90,26 +90,27 @@ exports.getPublicationComments = async (req, res) => {
         const userId = req.user.id;
 
         // Obtener comentarios principales (no respuestas)
-        const mainComments = await Comment.find({ 
+        const mainComments = await Comment.find({
             publication: publicationId,
             parentComment: null
         })
-        .populate('user', 'name profilePicture')
-        .populate({
-            path: 'replies',
-            populate: {
-                path: 'user',                select: 'name profilePicture'
-            }
-        })
-        .sort({ createdAt: -1 });
+            .populate('user', 'name apellido profilePicture')
+            .populate({
+                path: 'replies',
+                populate: {
+                    path: 'user', 
+                    select: 'name apellido profilePicture'
+                }
+            })
+            .sort({ createdAt: -1 });
 
         // Agregar campo likedByUser a cada comentario y sus respuestas
         const commentsWithLikes = mainComments.map(comment => {
             const commentObj = comment._doc;
-            
+
             // Verificar si el usuario dio like al comentario principal
             commentObj.likedByUser = comment.likes.some(like => like.toString() === userId);
-            
+
             // Procesar respuestas
             if (commentObj.replies && commentObj.replies.length > 0) {
                 commentObj.replies = commentObj.replies.map(reply => {
@@ -118,7 +119,7 @@ exports.getPublicationComments = async (req, res) => {
                     return replyObj;
                 });
             }
-            
+
             return commentObj;
         });
 
@@ -162,7 +163,7 @@ exports.likeComment = async (req, res) => {
             );
         }
 
-        res.json({ 
+        res.json({
             message: 'Like agregado exitosamente',
             likes: comment.likes.length
         });
@@ -194,7 +195,7 @@ exports.unlikeComment = async (req, res) => {
         );
         await comment.save();
 
-        res.json({ 
+        res.json({
             message: 'Like eliminado exitosamente',
             likes: comment.likes.length
         });
@@ -228,9 +229,9 @@ exports.updateComment = async (req, res) => {
         // Obtener comentario actualizado con datos del usuario
         const updatedComment = await Comment.findById(commentId).populate('user', 'name profilePicture');
 
-        res.json({ 
-            message: 'Comentario actualizado exitosamente', 
-            comment: updatedComment 
+        res.json({
+            message: 'Comentario actualizado exitosamente',
+            comment: updatedComment
         });
     } catch (error) {
         console.error('Error al actualizar comentario:', error);
@@ -251,7 +252,7 @@ exports.deleteComment = async (req, res) => {
 
         // Verificar que el usuario sea el autor del comentario o el dueño de la publicación
         const publication = await Publication.findById(comment.publication);
-        
+
         if (comment.user.toString() !== userId && publication.user.toString() !== userId) {
             return res.status(403).json({ message: 'No tienes permiso para eliminar este comentario' });
         }
@@ -260,7 +261,7 @@ exports.deleteComment = async (req, res) => {
         if (!comment.parentComment) {
             // Eliminar respuestas
             await Comment.deleteMany({ parentComment: commentId });
-            
+
             // Eliminar referencia del comentario en la publicación
             publication.comments = publication.comments.filter(
                 c => c.toString() !== commentId
@@ -297,9 +298,9 @@ exports.getCommentLikes = async (req, res) => {
             return res.status(404).json({ message: 'Comentario no encontrado' });
         }
 
-        res.json({ 
-            message: 'Usuarios que dieron like al comentario', 
-            likes: comment.likes 
+        res.json({
+            message: 'Usuarios que dieron like al comentario',
+            likes: comment.likes
         });
     } catch (error) {
         console.error('Error al obtener likes:', error);

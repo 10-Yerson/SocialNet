@@ -4,7 +4,7 @@ const { registerUser, registerAdmin, login, logout, checkAuth, getUserInfo} = re
 const { auth } = require('../middleware/authMiddleware');
 
 // Rutas de registro
-router.get('/check-auth', auth, checkAuth); // Nueva ruta protegida
+router.get('/check-auth', auth, checkAuth); 
 router.get('/user-info', auth, getUserInfo);
 
 router.post('/register', registerUser);

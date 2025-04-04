@@ -18,7 +18,7 @@ app.use(express.json());
 // Middleware para parsear cookies
 app.use(cookieParser());
 
-// Middleware de CORS (Debe ir antes de las rutas)
+// Middleware de CORS 
 app.use(cors({
   origin: process.env.FRONTEND_URL, // Permitir solicitudes desde el frontend
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],// Permitir estos métodos
@@ -38,7 +38,6 @@ app.use((req, res, next) => {
 
   next();
 });
-
 
 // Middleware para compresión
 app.use(compression);

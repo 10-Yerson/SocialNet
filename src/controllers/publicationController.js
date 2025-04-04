@@ -267,7 +267,7 @@ exports.getPublicationById = async (req, res) => {
 
         // Buscar la publicación en la base de datos
         const publication = await Publication.findById(publicationId)
-            .populate('user', 'name profilePicture');
+            .populate('user', 'name apellido profilePicture');
 
         // Si no se encuentra la publicación
         if (!publication) {
