@@ -75,8 +75,39 @@ const UserSchema = new mongoose.Schema({
         type: String,
         enum: ['user'],
         default: 'user'
+    },
+
+    // Nuevos campos para verificación
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    verificationRequest: {
+        status: {
+            type: String,
+            enum: ['none', 'pending', 'approved', 'rejected'],
+            default: 'none'
+        },
+        requestDate: {
+            type: Date
+        },
+        responseDate: {
+            type: Date
+        },
+        reason: {
+            type: String,
+            maxlength: 500
+        },
+        documents: [{
+            type: String 
+        }],
+        rejectionReason: {
+            type: String
+        }
     }
-});
+}, 
+
+{ timestamps: true });
 
 // Encriptar contraseña antes de guardar el usuario
 UserSchema.pre('save', async function (next) {
