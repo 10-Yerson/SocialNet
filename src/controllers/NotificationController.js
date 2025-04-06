@@ -38,7 +38,7 @@ exports.sendNotification = async (recipientId, senderId, message, type = 'other'
 
         // Hacer un populate completo para obtener todos los datos necesarios
         const populatedNotification = await Notification.findById(notification._id)
-            .populate('sender', '_id name apellido profilePicture');
+            .populate('sender', '_id name apellido profilePicture isVerified');
 
         // Preparar la notificación para enviarla por socket
         const notificationForClient = {
@@ -76,7 +76,7 @@ exports.getNotifications = async (req, res) => {
     try {
         const userId = req.user.id.toString();
         const notifications = await Notification.find({ recipient: userId })
-            .populate('sender', 'name apellido profilePicture')
+            .populate('sender', 'name apellido profilePicture isVerified')
             .sort({ createdAt: -1 });
 
         return res.json(notifications);

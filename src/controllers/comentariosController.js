@@ -45,7 +45,7 @@ exports.createComment = async (req, res) => {
         await publication.save();
 
         // Obtener datos del usuario para incluir en la respuesta
-        const commentWithUser = await Comment.findById(newComment._id).populate('user', 'name profilePicture');
+        const commentWithUser = await Comment.findById(newComment._id).populate('user', 'name profilePicture isVerified');
 
         // Enviar notificación al dueño de la publicación (si el comentario es de otro usuario)
         const commentUser = await User.findById(userId);
@@ -94,12 +94,12 @@ exports.getPublicationComments = async (req, res) => {
             publication: publicationId,
             parentComment: null
         })
-            .populate('user', 'name apellido profilePicture')
+            .populate('user', 'name apellido profilePicture isVerified')
             .populate({
                 path: 'replies',
                 populate: {
                     path: 'user', 
-                    select: 'name apellido profilePicture'
+                    select: 'name apellido profilePicture isVerified'
                 }
             })
             .sort({ createdAt: -1 });
@@ -227,7 +227,7 @@ exports.updateComment = async (req, res) => {
         await comment.save();
 
         // Obtener comentario actualizado con datos del usuario
-        const updatedComment = await Comment.findById(commentId).populate('user', 'name profilePicture');
+        const updatedComment = await Comment.findById(commentId).populate('user', 'name profilePicture isVerified');
 
         res.json({
             message: 'Comentario actualizado exitosamente',
@@ -293,7 +293,7 @@ exports.getCommentLikes = async (req, res) => {
     try {
         const { commentId } = req.params;
 
-        const comment = await Comment.findById(commentId).populate('likes', 'name profilePicture');
+        const comment = await Comment.findById(commentId).populate('likes', 'name apellido profilePicture isVerified ');
         if (!comment) {
             return res.status(404).json({ message: 'Comentario no encontrado' });
         }

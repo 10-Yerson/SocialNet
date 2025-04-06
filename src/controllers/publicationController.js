@@ -58,7 +58,7 @@ exports.getAllPublications = async (req, res) => {
         const userId = req.user.id;  // ID del usuario autenticado
 
         const publications   = await Publication.find()
-            .populate('user', 'name  apellido profilePicture')
+            .populate('user', 'name  apellido profilePicture isVerified')
             .sort({ createdAt: -1 });
 
         // Añadir un campo 'likedByUser' para cada publicación
@@ -79,7 +79,7 @@ exports.getUserPublications = async (req, res) => {
     try {
         const userId = req.user.id;
         const publications = await Publication.find({ user: userId })
-            .populate('user', 'name  apellido profilePicture')
+            .populate('user', 'name  apellido profilePicture isVerified')
             .sort({ createdAt: -1 });
         res.json(publications);
     } catch (error) {
@@ -96,7 +96,7 @@ exports.getFollowedUsersPublications = async (req, res) => {
         const followedUserIds = user.following.map(followedUser => followedUser._id);
 
         const publications = await Publication.find({ user: { $in: followedUserIds } })
-            .populate('user', 'name apellido profilePicture')
+            .populate('user', 'name apellido profilePicture isVerified')
             .sort({ createdAt: -1 });
 
         res.json(publications);
@@ -129,7 +129,7 @@ exports.getUserPublicationsById = async (req, res) => {
 
         // Si sigue, obtener las publicaciones del usuario objetivo
         const publications = await Publication.find({ user: targetUserId })
-            .populate('user', 'name apellido profilePicture')
+            .populate('user', 'name apellido profilePicture isVerified')
             .sort({ createdAt: -1 });
 
         return res.json(publications);
@@ -267,7 +267,7 @@ exports.getPublicationById = async (req, res) => {
 
         // Buscar la publicación en la base de datos
         const publication = await Publication.findById(publicationId)
-            .populate('user', 'name apellido profilePicture');
+            .populate('user', 'name apellido profilePicture isVerified');
 
         // Si no se encuentra la publicación
         if (!publication) {
