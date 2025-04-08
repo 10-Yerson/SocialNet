@@ -3,13 +3,16 @@ const User = require('../models/User');
 const cloudinary = require('../config/cloudinary');
 const streamifier = require('streamifier');
 const NotificationController = require('./NotificationController');
+const Comment = require('../models/Comentarios');
 
 exports.createPublication = async (req, res) => {
     try {
         const { description } = req.body;
         const user = req.user.id;
         let imageUrl = '';
+        let imagePublicId = '';
         let videoUrl = '';
+        let videoPublicId = '';
 
         // Función para subir archivos a Cloudinary
         const uploadStream = async (buffer, folder, resource_type) => {
@@ -29,12 +32,14 @@ exports.createPublication = async (req, res) => {
         if (req.file && req.file.mimetype.startsWith('image/')) {
             const result = await uploadStream(req.file.buffer, 'Publications/image', 'image');
             imageUrl = result.secure_url;
+            imagePublicId = result.public_id;
         }
 
         // Verifica si el usuario subió un video
         if (req.file && req.file.mimetype.startsWith('video/')) {
             const result = await uploadStream(req.file.buffer, 'Publications/video', 'video');
             videoUrl = result.secure_url;
+            videoPublicId = result.public_id;
         }
 
         // Guardar la publicación en la base de datos
@@ -42,7 +47,9 @@ exports.createPublication = async (req, res) => {
             user,
             description,
             image: imageUrl || '',
-            video: videoUrl || ''
+            imagePublicId,
+            video: videoUrl || '',
+            videoPublicId
         });
 
         await newPublication.save();
@@ -51,13 +58,13 @@ exports.createPublication = async (req, res) => {
         res.status(500).json({ message: 'Error al crear publicación', error: error.message });
     }
 };
-                
+
 // Obtener todas las publicaciones
 exports.getAllPublications = async (req, res) => {
     try {
         const userId = req.user.id;  // ID del usuario autenticado
 
-        const publications   = await Publication.find()
+        const publications = await Publication.find()
             .populate('user', 'name  apellido profilePicture isVerified')
             .sort({ createdAt: -1 });
 
@@ -164,14 +171,37 @@ exports.deletePublication = async (req, res) => {
         const { id } = req.params;
 
         const publication = await Publication.findById(id);
-        if (publication.user.toString() !== req.user.id) {
-            return res.status(403).json({ message: 'Unauthorized action' });
+        if (!publication) {
+            return res.status(404).json({ message: 'Publicación no encontrada' });
         }
 
-        await publication.remove();
-        res.json({ message: 'Publication deleted' });
+        // Verifica si el usuario es dueño de la publicación
+        if (publication.user.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'Acción no autorizada' });
+        }
+
+        // Eliminar imagen si existe
+        if (publication.imagePublicId) {
+            await cloudinary.uploader.destroy(publication.imagePublicId);
+        }
+
+        // Eliminar video si existe
+        if (publication.videoPublicId) {
+            await cloudinary.uploader.destroy(publication.videoPublicId, {
+                resource_type: 'video'
+            });
+        }
+
+        // Eliminar comentarios asociados
+        await Comment.deleteMany({ publication: id });
+
+        // Eliminar publicación
+        await publication.deleteOne();
+
+        res.json({ message: 'Publicación eliminada correctamente' });
     } catch (error) {
-        res.status(500).json({ message: 'Error deleting publication', error: error.message });
+        console.error('Error al eliminar publicación:', error);
+        res.status(500).json({ message: 'Error eliminando publicación', error: error.message });
     }
 };
 
@@ -197,12 +227,12 @@ exports.likePublication = async (req, res) => {
 
         if (req.user.id !== publication.user.toString()) {
             await NotificationController.sendNotification(
-                publication.user, 
-                req.user.id,     
+                publication.user,
+                req.user.id,
                 `${likeUser.name} ha dado like a tu publicación.`,
-                'like',           
-                publication._id,  
-                'Publication'     
+                'like',
+                publication._id,
+                'Publication'
             );
         }
 

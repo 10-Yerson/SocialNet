@@ -13,8 +13,14 @@ const publicationSchema = new mongoose.Schema({
     image: { 
         type: String, 
     },
+    imagePublicId: {  
+        type: String
+    },
     video: { 
         type: String  
+    },
+    videoPublicId: {  
+        type: String
     },
     likes: [{ 
         type: mongoose.Schema.Types.ObjectId, 
