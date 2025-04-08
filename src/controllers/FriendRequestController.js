@@ -126,7 +126,7 @@ exports.listFollowers = async (req, res) => {
     try {
         const userId = req.params.id;
 
-        const user = await User.findById(userId).populate('followers', 'name apellido profilePicture');
+        const user = await User.findById(userId).populate('followers', 'name apellido profilePicture isVerified');
 
         if (!user) {
             return res.status(404).json({ msg: 'Usuario no encontrado' });
@@ -144,7 +144,7 @@ exports.listFollowing = async (req, res) => {
     try {
         const userId = req.params.id;
 
-        const user = await User.findById(userId).populate('following', 'name apellido profilePicture');
+        const user = await User.findById(userId).populate('following', 'name apellido profilePicture isVerified');
 
         if (!user) {
             return res.status(404).json({ msg: 'Usuario no encontrado' });
