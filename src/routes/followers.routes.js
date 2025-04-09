@@ -15,6 +15,8 @@ router.get('/estado/:id', auth, authorize('user'), FriendsController.checkFollow
 // Listar usuarios que el usuario autenticado aún no sigue
 router.get('/sugerencias', auth, authorize('user'), FriendsController.listUsersToFollow);
 
+router.get('/search', auth, authorize('user'), FriendsController.searchUsers);
+
 // Listar seguidores de un usuario
 router.get('/seguidores/:id', auth, authorize('user'), FriendsController.listFollowers);
 

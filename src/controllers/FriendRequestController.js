@@ -156,3 +156,38 @@ exports.listFollowing = async (req, res) => {
         return res.status(500).send('Error en el servidor');
     }
 };
+
+// Buscar usuarios por nombre o apellido
+exports.searchUsers = async (req, res) => {
+    try {
+        const { q } = req.query;
+
+        if (!q || q.trim() === '') {
+            return res.status(400).json({ msg: 'Debe proporcionar un término de búsqueda' });
+        }
+
+        const searchTerms = q.trim().split(' ').filter(Boolean); // ['ana', 'martínez']
+
+        // Creamos una lista de condiciones para el $and
+        const searchConditions = searchTerms.map(term => {
+            const regex = new RegExp(term, 'i');
+            return {
+                $or: [
+                    { name: regex },
+                    { apellido: regex }
+                ]
+            };
+        });
+
+        const users = await User.find({
+            _id: { $ne: req.user.id }, // opcional: excluir al usuario actual
+            $and: searchConditions
+        }).select('name apellido profilePicture isVerified');
+
+        res.json(users);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Error en el servidor');
+    }
+};
+
