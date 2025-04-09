@@ -212,6 +212,39 @@ exports.uploadProfilePicture = async (req, res) => {
     }
 };
 
+exports.deleteProfilePicture = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+        const defaultUrl = 'https://res.cloudinary.com/dbgj8dqup/image/upload/v1743182322/uploads/ixv6tw8jfbhykflcmyex.png';
+        if (user.profilePicture === defaultUrl) {
+            return res.status(200).json({ msg: 'Ya tienes la imagen por defecto' });
+        }
+
+        // Eliminar imagen actual en Cloudinary
+        const getPublicIdFromUrl = (url) => {
+            const parts = url.split('/');
+            const fileName = parts.pop().split('.')[0];
+            const folder = parts.slice(parts.indexOf('Profiles')).join('/');
+            return folder + '/' + fileName;
+        };
+
+        const publicId = getPublicIdFromUrl(user.profilePicture);
+        await cloudinary.uploader.destroy(publicId);
+
+        // Restaurar imagen por defecto
+        user.profilePicture = defaultUrl;
+        await user.save();
+
+        res.status(200).send('Imagen de perfil eliminada. Se restauró la imagen por defecto.');
+
+    } catch (error) {
+        console.error("Error al eliminar imagen de perfil:", error);
+        res.status(500).json({ error: 'Error deleting profile picture' });
+    }
+};
 
 // Función auxiliar para extraer el public_id de Cloudinary
 function extractPublicId(url, folder) {
