@@ -165,24 +165,40 @@ const uploadToCloudinary = (file) => {
     });
 };
 
+// Función para obtener el public_id desde una URL de Cloudinary
+const getPublicIdFromUrl = (url) => {
+    const parts = url.split('/');
+    const fileName = parts.pop().split('.')[0]; // quita extensión
+    const folder = parts.slice(parts.indexOf('Profiles')).join('/');
+    return folder + '/' + fileName;
+};
+
 // Controlador para manejar la subida de archivos y actualización del perfil del usuario
 exports.uploadProfilePicture = async (req, res) => {
     try {
-        console.log("Archivo recibido:", req.file); // 🔍 LOG PARA DEBUG
 
         if (!req.file) {
             return res.status(400).json({ msg: 'No file uploaded' });
         }
 
-        // Subir archivo a Cloudinary
-        const result = await uploadToCloudinary(req.file);
-
-        // Actualizar URL en el usuario
         const user = await User.findById(req.params.id);
         if (!user) {
             return res.status(404).json({ msg: 'User not found' });
         }
 
+        const oldImageUrl = user.profilePicture;
+
+        // Subir nueva imagen a Cloudinary
+        const result = await uploadToCloudinary(req.file);
+
+        // Si la imagen anterior no es la predeterminada, eliminarla
+        const defaultUrl = 'https://res.cloudinary.com/dbgj8dqup/image/upload/v1743182322/uploads/ixv6tw8jfbhykflcmyex.png';
+        if (oldImageUrl && oldImageUrl !== defaultUrl) {
+            const publicId = getPublicIdFromUrl(oldImageUrl);
+            await cloudinary.uploader.destroy(publicId);
+        }
+
+        // Actualizar nueva imagen en el usuario
         user.profilePicture = result.secure_url;
         await user.save();
 
